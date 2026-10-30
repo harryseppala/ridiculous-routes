@@ -588,7 +588,7 @@ Author remaining levels per the progression table and lock in balance with tests
 
 #### Automated
 
-- [x] 4.1 `npm run build` succeeds; `npm test` passes (formatters)
+- [x] 4.1 `npm run build` succeeds; `npm test` passes (formatters) — 6243a3e
 
 #### Manual
 
@@ -600,7 +600,7 @@ Author remaining levels per the progression table and lock in balance with tests
 
 #### Automated
 
-- [ ] 5.1 `npm run build` succeeds; `npm test` passes
+- [x] 5.1 `npm run build` succeeds; `npm test` passes
 
 #### Manual
 

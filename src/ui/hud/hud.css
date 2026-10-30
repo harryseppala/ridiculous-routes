@@ -326,3 +326,131 @@
 @keyframes hud-pulse {
   50% { box-shadow: 0 0 0 10px rgb(255 210 122 / 6%); }
 }
+
+.hud-sailing {
+  color: #ffd27a;
+}
+
+.hud-btn.is-on {
+  background: #4d7a99;
+  color: #ffffff;
+}
+
+/* ---------- Overlays (results / game over) ---------- */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  width: 1280px;
+  height: 720px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0 12 24 / 55%);
+  animation: overlay-in 0.25s ease-out;
+}
+
+.overlay-card {
+  width: 460px;
+  padding: 26px 30px 24px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #0a3150 0%, #06243a 100%);
+  border: 2px solid #f36c21;
+  box-shadow: 0 20px 60px rgb(0 0 0 / 55%);
+  text-align: center;
+  animation: card-in 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.overlay-fail .overlay-card {
+  border-color: #ff5a5a;
+}
+
+.overlay-title {
+  font-size: 30px;
+  margin-bottom: 8px;
+}
+
+.overlay-reason {
+  font-size: 18px;
+  color: #ffd6d6;
+  margin: 14px 0 24px;
+  line-height: 1.4;
+}
+
+.stars {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  font-size: 54px;
+  line-height: 1;
+  margin: 6px 0 6px;
+}
+
+.star {
+  color: rgb(255 255 255 / 18%);
+  transform: scale(0.6);
+  animation: star-pop 0.4s ease-out forwards;
+}
+
+.star.is-earned {
+  color: #ffc83d;
+  text-shadow: 0 0 18px rgb(255 200 61 / 60%);
+}
+
+.new-best {
+  color: #ffd27a;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.results-table {
+  width: 100%;
+  margin: 14px 0 22px;
+  border-collapse: collapse;
+  font-size: 14px;
+  text-align: left;
+}
+
+.results-table th {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8fb3cc;
+  padding: 4px 6px;
+}
+
+.results-table td {
+  padding: 6px;
+  border-top: 1px solid rgb(255 255 255 / 8%);
+  font-variant-numeric: tabular-nums;
+}
+
+.results-table .mark {
+  font-weight: bold;
+  text-align: center;
+}
+
+.results-table .is-ok .mark { color: #6fd173; }
+.results-table .is-miss .mark { color: #ff8a8a; }
+
+.overlay-actions {
+  display: flex;
+  gap: 10px;
+}
+
+@keyframes overlay-in {
+  from { opacity: 0; }
+}
+
+@keyframes card-in {
+  from { transform: translateY(20px) scale(0.95); opacity: 0; }
+}
+
+@keyframes star-pop {
+  0% { transform: scale(0.4); }
+  70% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}

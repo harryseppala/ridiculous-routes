@@ -25,6 +25,8 @@ export const en = {
     undo: 'Undo',
     go: 'Go',
     retry: 'Retry',
+    levels: 'Levels',
+    next: 'Next level',
   },
   hud: {
     levelLabel: 'Level {n}',
@@ -64,7 +66,22 @@ export const en = {
     complete: 'Drag points to adjust. Click a leg to add a point. Right-click a point to delete it.',
     blocked: 'Your route crosses land. Move it onto open water.',
   },
+  results: {
+    title: 'Arrived!',
+    newBest: 'New best!',
+    metric: 'Goal',
+    yours: 'Yours',
+    goal: 'Needed',
+    budgetLimit: 'Within budget',
+    costTarget: '★★ Cost target',
+    deadline: 'On time',
+    co2Target: '★★★ CO₂ target',
+  },
+  gameOverScreen: {
+    title: 'Voyage failed',
+  },
   gameOver: {
+    land: 'The ship ran aground.',
     coastalWind: 'Strong winds pushed the ship onto the coast.',
     overBudget: 'You went over the fuel budget.',
     missedDeadline: 'You missed the arrival deadline.',

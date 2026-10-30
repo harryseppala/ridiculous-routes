@@ -25,6 +25,11 @@ export const PALETTE = {
     normal: '#1e63d6',
     fast: '#f36c21',
   },
+  speedLabelCss: {
+    slow: '#6fd173',
+    normal: '#8bb8ff',
+    fast: '#ff944d',
+  },
   blocked: 0xff2a2a,
   blockedCss: '#ff2a2a',
   selected: 0xffffff,

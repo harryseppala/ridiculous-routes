@@ -4,8 +4,10 @@ import type { LandField } from '../game/landField';
 import { getLevel } from '../game/levels';
 import type { LevelDef } from '../game/levels/types';
 import { PlanningState } from '../game/planningState';
-import { simulateEstimate, validateRoute, type RouteValidation } from '../game/simulate';
-import type { Route, Vec, VoyageResult } from '../game/types';
+import { simulate, simulateEstimate, validateRoute, type RouteValidation } from '../game/simulate';
+import type { Route, Speed, Vec, VoyageResult } from '../game/types';
+import { mountForScene } from '../ui/hud/hudLayer';
+import { createPlanningHud, type PlanningHud } from '../ui/hud/planningHud';
 import { attachDebugOverlay } from './debugOverlay';
 import { HazardView } from './hazardView';
 import { addWorldMap, getLandField, isOverSidebar, setupMapCamera } from './mapView';
@@ -42,6 +44,7 @@ export class PlanningScene extends Phaser.Scene {
   private drag: DragState | null = null;
   private hoverPoint: number | null = null;
   private dirty = true;
+  protected hud!: PlanningHud;
 
   constructor() {
     super({ key: SCENE_KEYS.PLANNING });
@@ -76,8 +79,28 @@ export class PlanningScene extends Phaser.Scene {
     });
     this.input.keyboard?.on('keydown-ESC', () => this.backToLevels());
 
+    this.hud = createPlanningHud(this.level, {
+      onSpeed: (speed, all) => this.onSpeed(speed, all),
+      onUndo: () => this.state.undo(),
+      onGo: () => this.go(),
+      onBack: () => this.backToLevels(),
+    });
+    mountForScene(this, this.hud.root);
+
     attachDebugOverlay(this, this.level);
     this.refresh();
+  }
+
+  protected onSpeed(speed: Speed, allLegs: boolean): void {
+    if (allLegs) this.state.setAllSpeeds(speed);
+    else if (this.state.selectedLeg !== null) this.state.setLegSpeed(this.state.selectedLeg, speed);
+  }
+
+  protected go(): void {
+    if (!this.canGo()) return;
+    const route = this.state.snapshot();
+    const result = simulate(this.level, route, this.land);
+    this.scene.start(SCENE_KEYS.SAILING, { levelId: this.level.id, route, result });
   }
 
   update(time: number): void {
@@ -99,6 +122,15 @@ export class PlanningScene extends Phaser.Scene {
       validation: this.validation,
       selectedLeg: this.state.selectedLeg,
       hoverPoint: this.hoverPoint,
+    });
+    this.hud.update({
+      stage: this.state.stage,
+      selectedLeg: this.state.selectedLeg,
+      speeds: this.state.route.speeds,
+      canUndo: this.state.canUndo,
+      canGo: this.canGo(),
+      blocked: this.validation.blockedLegs.length > 0 || this.validation.blockedPoints.length > 0,
+      totals: this.estimate.totals,
     });
   }
 

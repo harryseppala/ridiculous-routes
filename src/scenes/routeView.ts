@@ -105,7 +105,7 @@ export class RouteView {
         .setVisible(show)
         .setPosition(c.x, c.y)
         .setText(t().speed[speed])
-        .setColor(PALETTE.speedCss[speed])
+        .setColor(s.selectedLeg === i ? PALETTE.speedCss[speed] : PALETTE.speedLabelCss[speed])
         .setBackgroundColor(s.selectedLeg === i ? '#ffffff' : '#0b1e33');
     });
   }

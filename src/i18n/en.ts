@@ -11,6 +11,17 @@ export const en = {
     locked: 'Locked: finish the previous level first.',
     newElement: 'New: {element}',
   },
+  tutorial: {
+    step: 'Step {n} of {total}',
+    continue: 'Continue',
+    showTutorial: 'Show tutorial',
+    straightRoute: 'Click the departure port, then the arrival port.',
+    waypoints: 'Click a leg to add a waypoint and steer around the island.',
+    wind: 'Strong winds near land are dangerous. Keep clear of the windy strait.',
+    eca: 'The striped area needs cleaner fuel: more cost, fewer emissions. Drag your route in or out of it.',
+    speed: 'Slower is cheaper and cleaner, but takes longer. Try changing a leg’s speed.',
+    ready: 'You’re ready! Press Go to set sail.',
+  },
   intro: {
     newLabel: 'New',
     start: 'Start planning',

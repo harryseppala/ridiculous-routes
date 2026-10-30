@@ -629,3 +629,50 @@
   margin-bottom: 22px;
   color: #e3f1fa;
 }
+
+/* ---------- Tutorial ---------- */
+
+.tutorial-card {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  width: 380px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgb(3 24 40 / 94%);
+  border: 2px solid #ffd27a;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 45%);
+}
+
+.tutorial-card.is-new {
+  animation: card-in 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.tutorial-step {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #ffd27a;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.tutorial-text {
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.tutorial-continue {
+  margin-top: 10px;
+  padding: 7px 18px;
+  font-size: 13px;
+}
+
+.tutorial-continue[hidden] {
+  display: none;
+}
+
+.hud-link-small {
+  font-size: 12px;
+  color: #ffd27a;
+}

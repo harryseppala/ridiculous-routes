@@ -2,7 +2,7 @@ import type { LevelDef } from './types';
 
 /**
  * Tutorial: an island between the ports, a windy strait to the north and a
- * small regulated area (ECA) on the southern passage.
+ * regulated area (ECA) over the deep southern passage.
  */
 export const level1: LevelDef = {
   id: 1,
@@ -11,9 +11,9 @@ export const level1: LevelDef = {
   start: { x: 238, y: 388 },
   end: { x: 322, y: 372 },
   budgetK: 450,
-  deadlineH: 240,
+  deadlineH: 264,
   costTargetK: 340,
-  co2TargetT: 650,
+  co2TargetT: 800,
   windZones: [
     {
       polygon: [
@@ -29,10 +29,10 @@ export const level1: LevelDef = {
   ],
   ecas: [
     [
-      { x: 255, y: 401 },
-      { x: 318, y: 401 },
-      { x: 318, y: 428 },
-      { x: 255, y: 428 },
+      { x: 262, y: 424 },
+      { x: 340, y: 424 },
+      { x: 340, y: 440 },
+      { x: 262, y: 440 },
     ],
   ],
   currents: [],

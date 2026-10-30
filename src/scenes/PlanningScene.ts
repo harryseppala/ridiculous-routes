@@ -3,12 +3,15 @@ import { dist, distToSegment } from '../game/geometry';
 import type { LandField } from '../game/landField';
 import { getLevel } from '../game/levels';
 import type { LevelDef } from '../game/levels/types';
-import { PlanningState } from '../game/planningState';
+import { PlanningState, type PlanningOp } from '../game/planningState';
+import { progress } from '../game/progress';
+import { routeTouchesEca, TutorialController, type TutorialContext } from '../game/tutorial';
 import { simulate, simulateEstimate, validateRoute, type RouteValidation } from '../game/simulate';
 import type { Route, Speed, Vec, VoyageResult } from '../game/types';
 import { mountForScene } from '../ui/hud/hudLayer';
 import { createIntroCard } from '../ui/hud/introCard';
-import { createPlanningHud, type PlanningHud } from '../ui/hud/planningHud';
+import { createPlanningHud, type HudHighlight, type PlanningHud } from '../ui/hud/planningHud';
+import { createTutorialCard, type TutorialCard } from '../ui/hud/tutorialCard';
 import { attachDebugOverlay } from './debugOverlay';
 import { HazardView } from './hazardView';
 import { addWorldMap, getLandField, isOverSidebar, setupMapCamera } from './mapView';
@@ -21,6 +24,8 @@ export interface PlanningSceneData {
   route?: Route;
   /** Show the level intro card first (entering from level select, not Retry). */
   showIntro?: boolean;
+  /** Replay the tutorial even if it was completed before. */
+  forceTutorial?: boolean;
 }
 
 /** Hit radii in screen pixels. */
@@ -49,6 +54,11 @@ export class PlanningScene extends Phaser.Scene {
   private hoverPoint: number | null = null;
   private dirty = true;
   protected hud!: PlanningHud;
+  private tutorial?: TutorialController;
+  private tutorialCard?: TutorialCard;
+  private tutorialStarted = false;
+  private pendingOps: PlanningOp[] = [];
+  private portPulse?: Phaser.GameObjects.Arc;
 
   constructor() {
     super({ key: SCENE_KEYS.PLANNING });
@@ -58,6 +68,11 @@ export class PlanningScene extends Phaser.Scene {
     this.level = getLevel(data.levelId ?? 1);
     this.initialRoute = data.route;
     this.showIntro = data.showIntro === true && !data.route;
+    const wantsTutorial = !!this.level.tutorial?.length && !data.route && (data.forceTutorial === true || !progress.isTutorialDone());
+    this.tutorial = wantsTutorial ? new TutorialController(this.level.tutorial!) : undefined;
+    this.tutorialCard = undefined;
+    this.tutorialStarted = false;
+    this.pendingOps = [];
     this.drag = null;
     this.hoverPoint = null;
     this.dirty = true;
@@ -70,8 +85,9 @@ export class PlanningScene extends Phaser.Scene {
     this.hazards = new HazardView(this, this.level, this.cam.zoom);
     this.routeView = new RouteView(this, this.cam.zoom);
     this.state = new PlanningState(this.level, this.initialRoute);
-    this.state.onChange(() => {
+    this.state.onChange((op) => {
       this.dirty = true;
+      this.pendingOps.push(op);
     });
 
     this.input.mouse?.disableContextMenu();
@@ -89,6 +105,10 @@ export class PlanningScene extends Phaser.Scene {
       onUndo: () => this.state.undo(),
       onGo: () => this.go(),
       onBack: () => this.backToLevels(),
+      onShowTutorial:
+        this.level.tutorial?.length && !this.tutorial
+          ? () => this.scene.restart({ levelId: this.level.id, forceTutorial: true })
+          : undefined,
     });
     mountForScene(this, this.hud.root);
 
@@ -111,7 +131,65 @@ export class PlanningScene extends Phaser.Scene {
   }
 
   /** Called once planning becomes interactive. */
-  protected onIntroDismissed(): void {}
+  protected onIntroDismissed(): void {
+    if (!this.tutorial) return;
+    this.tutorialCard = createTutorialCard(() => {
+      if (this.tutorial?.continue(this.tutorialContext())) this.updateTutorialUi();
+    });
+    mountForScene(this, this.tutorialCard.root);
+    const zoom = this.cam.zoom;
+    this.portPulse = this.add.circle(0, 0, 14 / zoom, 0xffd27a, 0).setStrokeStyle(3 / zoom, 0xffd27a, 1).setDepth(25);
+    this.tweens.add({ targets: this.portPulse, scale: { from: 0.8, to: 1.6 }, alpha: { from: 1, to: 0 }, duration: 1100, repeat: -1 });
+    this.tutorial.start(this.tutorialContext());
+    this.tutorialStarted = true;
+    this.pendingOps = [];
+    this.updateTutorialUi();
+    this.refresh();
+  }
+
+  private tutorialContext(): TutorialContext {
+    const route = this.state.route;
+    const clean =
+      this.state.stage === 'complete' && this.validation.blockedLegs.length === 0 && this.validation.blockedPoints.length === 0;
+    return {
+      route,
+      stage: this.state.stage,
+      validation: this.validation,
+      coastalWindFail: clean && simulate(this.level, route, this.land).failure?.reason === 'coastalWind',
+      inEca: routeTouchesEca(this.level, route),
+    };
+  }
+
+  private updateTutorialUi(): void {
+    const tut = this.tutorial;
+    const card = this.tutorialCard;
+    if (!tut || !card) return;
+    if (tut.done) {
+      card.showReady();
+      this.hud.highlight('go');
+      this.portPulse?.setVisible(false);
+      if (!progress.isTutorialDone()) progress.setTutorialDone(true);
+      return;
+    }
+    const step = tut.current!;
+    card.showStep(step, tut.stepNumber, tut.total, tut.canContinue);
+    const highlight: Record<typeof step, HudHighlight | null> = {
+      straightRoute: null,
+      waypoints: null,
+      wind: 'legend-wind',
+      eca: 'legend-eca',
+      speed: 'speed',
+    };
+    this.hud.highlight(highlight[step]);
+    const port =
+      step === 'straightRoute' ? (this.state.stage === 'pickStart' ? this.level.start : this.state.stage === 'drawing' ? this.level.end : null) : null;
+    this.portPulse?.setVisible(port !== null);
+    if (port) this.portPulse?.setPosition(port.x, port.y);
+  }
+
+  private allows(op: PlanningOp): boolean {
+    return !this.tutorial || this.tutorial.allows(op);
+  }
 
   protected onSpeed(speed: Speed, allLegs: boolean): void {
     if (allLegs) this.state.setAllSpeeds(speed);
@@ -138,6 +216,16 @@ export class PlanningScene extends Phaser.Scene {
     this.dirty = false;
     this.validation = validateRoute(this.level, this.state.route, this.land);
     this.estimate = simulateEstimate(this.level, this.state.route, this.land);
+    // Evaluate the tutorial only on settled routes (not mid-drag).
+    if (!this.drag) {
+      if (this.tutorial && this.tutorialStarted && this.pendingOps.length > 0) {
+        const ctx = this.tutorialContext();
+        // At most one step per batch so each card is seen.
+        for (const op of this.pendingOps) if (this.tutorial.handle(op, ctx)) break;
+        this.updateTutorialUi();
+      }
+      this.pendingOps = [];
+    }
     this.routeView.render({
       route: this.state.route,
       stage: this.state.stage,
@@ -161,7 +249,12 @@ export class PlanningScene extends Phaser.Scene {
   }
 
   protected canGo(): boolean {
-    return this.state.stage === 'complete' && this.validation.blockedLegs.length === 0 && this.validation.blockedPoints.length === 0;
+    return (
+      this.state.stage === 'complete' &&
+      this.validation.blockedLegs.length === 0 &&
+      this.validation.blockedPoints.length === 0 &&
+      (!this.tutorial || this.tutorial.done)
+    );
   }
 
   // ---- hit testing (world units, radii from screen px) ----
@@ -244,7 +337,9 @@ export class PlanningScene extends Phaser.Scene {
     if (s.stage === 'drawing') {
       if (this.nearPort(w, this.level.end)) s.clickEnd();
       else if (this.nearPort(w, this.level.start)) return;
-      else if (!this.land.isLand(w)) s.addWaypoint(w);
+      else if (!this.land.isLand(w)) {
+        if (this.allows('addWaypoint')) s.addWaypoint(w);
+      }
       else this.onMissedClick('land');
       return;
     }
@@ -256,7 +351,7 @@ export class PlanningScene extends Phaser.Scene {
       return;
     }
     const leg = this.hitLeg(w);
-    if (leg !== null && !this.land.isLand(w)) {
+    if (leg !== null && !this.land.isLand(w) && this.allows('insertWaypoint')) {
       const idx = s.insertWaypoint(leg, w);
       if (idx !== null) this.drag = { index: idx, moved: false, inserted: true, pending: null };
       return;
@@ -295,6 +390,7 @@ export class PlanningScene extends Phaser.Scene {
     const drag = this.drag;
     if (!drag) return;
     this.drag = null;
+    this.dirty = true;
     if (drag.pending) this.state.moveWaypoint(drag.index, drag.pending);
     const final = this.state.route.points[drag.index];
     const onLand = final ? this.land.isLand(final) : false;

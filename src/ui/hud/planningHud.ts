@@ -11,6 +11,7 @@ export interface PlanningHudCallbacks {
   onUndo(): void;
   onGo(): void;
   onBack(): void;
+  onShowTutorial?: () => void;
 }
 
 export interface PlanningHudState {
@@ -46,6 +47,12 @@ export function createPlanningHud(level: LevelDef, cb: PlanningHudCallbacks): Pl
   const title = el('div', 'hud-title');
   title.append(el('div', 'hud-level-label', fill(s.hud.levelLabel, { n: level.id })), el('div', 'hud-level-name', names.title));
   header.append(back, title);
+  if (cb.onShowTutorial) {
+    const show = el('button', 'hud-link hud-link-small', s.tutorial.showTutorial);
+    show.type = 'button';
+    show.addEventListener('click', () => cb.onShowTutorial?.());
+    header.append(show);
+  }
 
   const hint = el('div', 'hud-hint');
 

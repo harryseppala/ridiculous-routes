@@ -612,7 +612,7 @@ Author remaining levels per the progression table and lock in balance with tests
 
 #### Automated
 
-- [x] 6.1 `npm run build` succeeds; `npm test` passes (unlock logic)
+- [x] 6.1 `npm run build` succeeds; `npm test` passes (unlock logic) — dda41cd
 
 #### Manual
 
@@ -623,8 +623,8 @@ Author remaining levels per the progression table and lock in balance with tests
 
 #### Automated
 
-- [ ] 7.1 `npm test` passes (tutorial transitions; level 1 reference route 3 stars)
-- [ ] 7.2 `npm run build` succeeds
+- [x] 7.1 `npm test` passes (tutorial transitions; level 1 reference route 3 stars)
+- [x] 7.2 `npm run build` succeeds
 
 #### Manual
 

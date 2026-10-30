@@ -623,8 +623,8 @@ Author remaining levels per the progression table and lock in balance with tests
 
 #### Automated
 
-- [x] 7.1 `npm test` passes (tutorial transitions; level 1 reference route 3 stars)
-- [x] 7.2 `npm run build` succeeds
+- [x] 7.1 `npm test` passes (tutorial transitions; level 1 reference route 3 stars) — 8ffb79c
+- [x] 7.2 `npm run build` succeeds — 8ffb79c
 
 #### Manual
 
@@ -635,8 +635,8 @@ Author remaining levels per the progression table and lock in balance with tests
 
 #### Automated
 
-- [ ] 8.1 `npm test` passes (all level validity tests)
-- [ ] 8.2 `npm run build` succeeds
+- [x] 8.1 `npm test` passes (all level validity tests)
+- [x] 8.2 `npm run build` succeeds
 
 #### Manual
 

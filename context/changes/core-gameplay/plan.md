@@ -553,9 +553,9 @@ Author remaining levels per the progression table and lock in balance with tests
 
 #### Automated
 
-- [x] 1.1 `npm run bake:mask` produces `public/assets/images/land-mask.png`
-- [x] 1.2 `npm test` passes (landField, geometry, progress tests)
-- [x] 1.3 `npm run build` succeeds
+- [x] 1.1 `npm run bake:mask` produces `public/assets/images/land-mask.png` — d397009
+- [x] 1.2 `npm test` passes (landField, geometry, progress tests) — d397009
+- [x] 1.3 `npm run build` succeeds — d397009
 
 #### Manual
 
@@ -567,8 +567,8 @@ Author remaining levels per the progression table and lock in balance with tests
 
 #### Automated
 
-- [ ] 2.1 `npm test` passes with engine coverage (speeds, wind, ECA, coastal wind, budget/deadline, stars)
-- [ ] 2.2 `npm run build` succeeds
+- [x] 2.1 `npm test` passes with engine coverage (speeds, wind, ECA, coastal wind, budget/deadline, stars)
+- [x] 2.2 `npm run build` succeeds
 
 ### Phase 3: Map & Route Editing
 

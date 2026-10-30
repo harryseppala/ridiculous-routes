@@ -1,24 +1,61 @@
 import type { LevelDef } from './types';
 
-/** Placeholder; replaced with tutorial content in phase 7. */
+/**
+ * Tutorial: an island between the ports, a windy strait to the north and a
+ * small regulated area (ECA) on the southern passage.
+ */
 export const level1: LevelDef = {
   id: 1,
   textKey: 'l1',
-  viewport: { x: 260, y: 290, w: 180, h: 132 },
-  start: { x: 290, y: 330 },
-  end: { x: 410, y: 380 },
-  budgetK: 400,
-  deadlineH: 400,
-  costTargetK: 300,
-  co2TargetT: 900,
-  windZones: [],
-  ecas: [],
+  viewport: { x: 200, y: 322, w: 160, h: 118 },
+  start: { x: 238, y: 388 },
+  end: { x: 322, y: 372 },
+  budgetK: 450,
+  deadlineH: 240,
+  costTargetK: 340,
+  co2TargetT: 650,
+  windZones: [
+    {
+      polygon: [
+        { x: 246, y: 326 },
+        { x: 318, y: 326 },
+        { x: 318, y: 370 },
+        { x: 246, y: 370 },
+      ],
+      dir: { x: 0, y: 1 },
+      knots: 25,
+      strength: 'strong',
+    },
+  ],
+  ecas: [
+    [
+      { x: 255, y: 401 },
+      { x: 318, y: 401 },
+      { x: 318, y: 428 },
+      { x: 255, y: 428 },
+    ],
+  ],
   currents: [],
+  tutorial: ['straightRoute', 'waypoints', 'wind', 'eca', 'speed'],
   referenceRoute: {
     points: [
-      { x: 290, y: 330 },
-      { x: 410, y: 380 },
+      { x: 238, y: 388 },
+      { x: 268, y: 416 },
+      { x: 305, y: 416 },
+      { x: 322, y: 372 },
     ],
-    speeds: ['normal'],
+    speeds: ['normal', 'normal', 'normal'],
   },
+  badRoutes: [
+    {
+      // Hugging the islet in the strong wind: wrecked on the coast.
+      points: [
+        { x: 238, y: 388 },
+        { x: 262, y: 336 },
+        { x: 306, y: 336 },
+        { x: 322, y: 372 },
+      ],
+      speeds: ['normal', 'normal', 'normal'],
+    },
+  ],
 };

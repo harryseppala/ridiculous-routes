@@ -567,15 +567,15 @@ Author remaining levels per the progression table and lock in balance with tests
 
 #### Automated
 
-- [x] 2.1 `npm test` passes with engine coverage (speeds, wind, ECA, coastal wind, budget/deadline, stars)
-- [x] 2.2 `npm run build` succeeds
+- [x] 2.1 `npm test` passes with engine coverage (speeds, wind, ECA, coastal wind, budget/deadline, stars) — 8f866aa
+- [x] 2.2 `npm run build` succeeds — 8f866aa
 
 ### Phase 3: Map & Route Editing
 
 #### Automated
 
-- [ ] 3.1 `npm test` passes (planningState)
-- [ ] 3.2 `npm run build` succeeds
+- [x] 3.1 `npm test` passes (planningState)
+- [x] 3.2 `npm run build` succeeds
 
 #### Manual
 

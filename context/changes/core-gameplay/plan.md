@@ -600,7 +600,7 @@ Author remaining levels per the progression table and lock in balance with tests
 
 #### Automated
 
-- [x] 5.1 `npm run build` succeeds; `npm test` passes
+- [x] 5.1 `npm run build` succeeds; `npm test` passes — 4d8712c
 
 #### Manual
 
@@ -612,7 +612,7 @@ Author remaining levels per the progression table and lock in balance with tests
 
 #### Automated
 
-- [ ] 6.1 `npm run build` succeeds; `npm test` passes (unlock logic)
+- [x] 6.1 `npm run build` succeeds; `npm test` passes (unlock logic)
 
 #### Manual
 

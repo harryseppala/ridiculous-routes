@@ -454,3 +454,178 @@
   70% { transform: scale(1.25); }
   100% { transform: scale(1); }
 }
+
+/* ---------- Level select ---------- */
+
+.level-select {
+  position: absolute;
+  inset: 0;
+  width: 1280px;
+  height: 720px;
+  pointer-events: none;
+}
+
+.level-select > * {
+  pointer-events: auto;
+}
+
+.ls-header {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1280px;
+  height: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgb(0 27 46 / 85%);
+}
+
+.ls-back {
+  position: absolute;
+  left: 32px;
+  top: 24px;
+  font-size: 16px;
+}
+
+.ls-heading {
+  font-size: 32px;
+  letter-spacing: 0.04em;
+}
+
+.ls-subtitle {
+  font-size: 16px;
+  color: #cfe4f2;
+}
+
+.ls-marker,
+.ls-marker-wrap {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+.ls-marker-wrap .ls-marker {
+  position: relative;
+  transform: none;
+}
+
+.ls-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  color: #ffffff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ls-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+  background: #f36c21;
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 45%);
+  transition: transform 0.15s;
+}
+
+.ls-marker:hover:not(:disabled) .ls-badge,
+.ls-marker:focus-visible .ls-badge {
+  transform: scale(1.15);
+}
+
+.ls-marker:focus-visible {
+  outline: none;
+}
+
+.ls-marker:focus-visible .ls-badge {
+  outline: 2px solid #ffd27a;
+  outline-offset: 3px;
+}
+
+.ls-stars {
+  font-size: 15px;
+  color: #ffc83d;
+  text-shadow: 0 1px 3px #000000;
+  letter-spacing: 1px;
+}
+
+.ls-marker.is-locked {
+  cursor: not-allowed;
+}
+
+.ls-marker.is-locked .ls-badge {
+  background: #3a4d5c;
+  border-color: #8fa4b3;
+  font-size: 15px;
+}
+
+.ls-marker.is-locked .ls-stars {
+  opacity: 0.4;
+}
+
+.ls-tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  width: max-content;
+  max-width: 260px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: rgb(3 24 40 / 95%);
+  border: 1px solid #f36c21;
+  font-size: 12px;
+  text-align: left;
+  color: #cfe4f2;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.ls-tip strong {
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.ls-marker:hover .ls-tip,
+.ls-marker:focus-visible .ls-tip,
+.ls-marker-wrap:hover .ls-tip {
+  display: flex;
+}
+
+/* ---------- Intro card ---------- */
+
+.intro-card {
+  width: 420px;
+}
+
+.intro-new {
+  display: inline-block;
+  margin: 4px 0 12px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgb(243 108 33 / 20%);
+  color: #ffb27f;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 0.05em;
+}
+
+.intro-text {
+  font-size: 17px;
+  line-height: 1.45;
+  margin-bottom: 22px;
+  color: #e3f1fa;
+}

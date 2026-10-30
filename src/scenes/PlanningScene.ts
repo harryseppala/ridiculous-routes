@@ -7,6 +7,7 @@ import { PlanningState } from '../game/planningState';
 import { simulate, simulateEstimate, validateRoute, type RouteValidation } from '../game/simulate';
 import type { Route, Speed, Vec, VoyageResult } from '../game/types';
 import { mountForScene } from '../ui/hud/hudLayer';
+import { createIntroCard } from '../ui/hud/introCard';
 import { createPlanningHud, type PlanningHud } from '../ui/hud/planningHud';
 import { attachDebugOverlay } from './debugOverlay';
 import { HazardView } from './hazardView';
@@ -18,6 +19,8 @@ export interface PlanningSceneData {
   levelId?: number;
   /** Route to restore (Retry). */
   route?: Route;
+  /** Show the level intro card first (entering from level select, not Retry). */
+  showIntro?: boolean;
 }
 
 /** Hit radii in screen pixels. */
@@ -38,6 +41,7 @@ export class PlanningScene extends Phaser.Scene {
   protected validation: RouteValidation = { blockedLegs: [], blockedPoints: [] };
   protected estimate!: VoyageResult;
   private initialRoute?: Route;
+  protected showIntro = false;
   private hazards!: HazardView;
   private routeView!: RouteView;
   private cam!: Phaser.Cameras.Scene2D.Camera;
@@ -53,6 +57,7 @@ export class PlanningScene extends Phaser.Scene {
   init(data: PlanningSceneData): void {
     this.level = getLevel(data.levelId ?? 1);
     this.initialRoute = data.route;
+    this.showIntro = data.showIntro === true && !data.route;
     this.drag = null;
     this.hoverPoint = null;
     this.dirty = true;
@@ -89,7 +94,24 @@ export class PlanningScene extends Phaser.Scene {
 
     attachDebugOverlay(this, this.level);
     this.refresh();
+
+    if (this.showIntro) {
+      this.input.enabled = false;
+      const unmount = mountForScene(
+        this,
+        createIntroCard(this.level, () => {
+          unmount();
+          this.input.enabled = true;
+          this.onIntroDismissed();
+        })
+      );
+    } else {
+      this.onIntroDismissed();
+    }
   }
+
+  /** Called once planning becomes interactive. */
+  protected onIntroDismissed(): void {}
 
   protected onSpeed(speed: Speed, allLegs: boolean): void {
     if (allLegs) this.state.setAllSpeeds(speed);

@@ -7,9 +7,13 @@ export const en = {
   levelSelect: {
     heading: 'SELECT A ROUTE',
     subtitle: 'Plan your ship route to balance cost, time, safety and emissions.',
-    level1Title: 'Level 1: First Voyage',
-    level1Subtitle: 'Basic routing tutorial',
     backToTitle: 'Back to Title',
+    locked: 'Locked: finish the previous level first.',
+    newElement: 'New: {element}',
+  },
+  intro: {
+    newLabel: 'New',
+    start: 'Start planning',
   },
   meters: {
     budget: 'Budget (Cost)',

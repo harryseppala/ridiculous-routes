@@ -31,6 +31,62 @@ export const en = {
     overBudget: 'You went over the fuel budget.',
     missedDeadline: 'You missed the arrival deadline.',
   },
+  levels: {
+    l1: {
+      title: 'First Voyage',
+      newElement: 'Tutorial: routes, wind, regulated areas, speed',
+      intro: 'Your first job: get the ship from port to port. The cards will show you how.',
+      startName: 'Harbourtown',
+      endName: 'Cape Haven',
+    },
+    l2: {
+      title: 'Islands & Straits',
+      newElement: 'Narrow straits',
+      intro: 'A narrow strait can save a long detour. Thread it carefully, or sail around.',
+      startName: 'Northwick',
+      endName: 'Southport',
+    },
+    l3: {
+      title: 'Wind & Storms',
+      newElement: 'Wind and storms',
+      intro: 'Tailwinds push you along, headwinds slow you down. Storms near a coast will wreck the ship.',
+      startName: 'Gale Point',
+      endName: 'Stillwater',
+    },
+    l4: {
+      title: 'Regulated Waters',
+      newElement: 'Emission control areas',
+      intro: 'Striped areas require cleaner fuel: it costs more, but emits much less.',
+      startName: 'Greenbay',
+      endName: 'Port Clara',
+    },
+    l5: {
+      title: 'Against the Clock',
+      newElement: 'Speed and deadlines',
+      intro: 'Fast legs arrive sooner but burn far more fuel. Mix speeds to beat the deadline.',
+      startName: 'Rushford',
+      endName: 'Timely Bay',
+    },
+    l6: {
+      title: 'Ride the Current',
+      newElement: 'Ocean currents',
+      intro: 'Flowing lines show ocean currents. Ride one to save time and fuel.',
+      startName: 'Drift Harbour',
+      endName: 'Eddyport',
+    },
+    l7: {
+      title: 'The Grand Passage',
+      newElement: 'Everything combined',
+      intro: 'Wind, currents, regulated areas and a tight schedule. Balance them all.',
+      startName: 'Old Wharf',
+      endName: 'Far Haven',
+    },
+  },
+  debug: {
+    world: 'world',
+    land: 'land',
+    water: 'water',
+  },
 } as const;
 
 export type TranslationSchema = typeof en;

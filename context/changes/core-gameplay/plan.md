@@ -635,8 +635,8 @@ Author remaining levels per the progression table and lock in balance with tests
 
 #### Automated
 
-- [x] 8.1 `npm test` passes (all level validity tests)
-- [x] 8.2 `npm run build` succeeds
+- [x] 8.1 `npm test` passes (all level validity tests) — c1fc2d0
+- [x] 8.2 `npm run build` succeeds — c1fc2d0
 
 #### Manual
 

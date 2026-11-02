@@ -16,12 +16,12 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
-    this.load.image('start-bg', '/assets/images/start-bg.png');
-    this.load.svg(MAP_TEXTURE_KEY, '/assets/images/map3.svg', {
+    this.load.image('start-bg', `${import.meta.env.BASE_URL}assets/images/start-bg.png`);
+    this.load.svg(MAP_TEXTURE_KEY, `${import.meta.env.BASE_URL}assets/images/map3.svg`, {
       width: MAP_TEXTURE_SIZE.width,
       height: MAP_TEXTURE_SIZE.height,
     });
-    this.load.image(LAND_MASK_KEY, '/assets/images/land-mask.png');
+    this.load.image(LAND_MASK_KEY, `${import.meta.env.BASE_URL}assets/images/land-mask.png`);
   }
 
   create(): void {

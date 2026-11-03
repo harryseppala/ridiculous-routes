@@ -14,13 +14,14 @@ export const en = {
   tutorial: {
     step: 'Step {n} of {total}',
     continue: 'Continue',
+    skipDemo: 'Skip demonstration',
     showTutorial: 'Show tutorial',
     straightRoute: 'Click the departure port, then the arrival port.',
     waypoints: 'Click a leg to add a waypoint and steer around the island.',
     wind: 'Strong winds near land are dangerous. Keep clear of the windy strait.',
     eca: 'The striped area needs cleaner fuel: more cost, fewer emissions. Drag your route in or out of it.',
-    speed: 'Slower is cheaper and cleaner, but takes longer. Try changing a leg’s speed.',
-    ready: 'You’re ready! Press Go to set sail.',
+    speed: 'Click a waypoint or speed label to cycle through normal, fast and slow.',
+    ready: 'Your turn: plan a route and press Go.',
   },
   intro: {
     newLabel: 'New',
@@ -84,6 +85,16 @@ export const en = {
   results: {
     title: 'Arrived!',
     newBest: 'New best!',
+    factLabel: 'Shipping fact',
+    facts: [
+      'A port is where ships load and unload cargo.',
+      'A strait is a narrow waterway between two larger bodies of water.',
+      'A headwind blows against a ship; a tailwind helps push it along.',
+      'Emission control areas limit air pollution from ships.',
+      'Slower sailing can save fuel and reduce emissions.',
+      'Ocean currents can help or hinder a ship’s journey.',
+      'A nautical mile is about 1.85 kilometres.',
+    ],
     metric: 'Goal',
     yours: 'Yours',
     goal: 'Needed',

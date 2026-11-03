@@ -9,6 +9,12 @@ export interface WindZone {
   dir: Vec;
   knots: number;
   strength: WindStrength;
+  weather?: {
+    fromHour: number;
+    toHour: number;
+    fromIntensity: number;
+    toIntensity: number;
+  };
 }
 
 export interface CurrentZone {

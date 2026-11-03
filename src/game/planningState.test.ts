@@ -117,6 +117,23 @@ describe('PlanningState', () => {
     expect(s.setLegSpeed(0, 'fast')).toBe(false);
   });
 
+  it('cycles a leg through its allowed speeds and supports undo', () => {
+    const s = complete();
+    expect(s.cycleLegSpeed(0)).toBe(true);
+    expect(s.route.speeds[0]).toBe('fast');
+    s.cycleLegSpeed(0);
+    expect(s.route.speeds[0]).toBe('slow');
+    s.cycleLegSpeed(0);
+    expect(s.route.speeds[0]).toBe('normal');
+    s.undo();
+    expect(s.route.speeds[0]).toBe('slow');
+    const restricted = new PlanningState({ ...level, allowedSpeeds: ['normal', 'slow'] });
+    restricted.clickStart();
+    restricted.clickEnd();
+    restricted.cycleLegSpeed(0);
+    expect(restricted.route.speeds[0]).toBe('slow');
+  });
+
   it('starts complete when given an initial route and emits ops', () => {
     const s = new PlanningState(level, {
       points: [level.start, { x: 50, y: 5 }, level.end],

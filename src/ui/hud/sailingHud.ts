@@ -1,7 +1,6 @@
 import type { LevelDef } from '../../game/levels/types';
 import type { VoyageTotals } from '../../game/types';
 import { t } from '../../i18n';
-import { fill, formatCo2, formatCost } from '../../i18n/format';
 import { el } from './hudLayer';
 import { createMetersPanel } from './meter';
 
@@ -15,20 +14,9 @@ export interface SailingHud {
 export function createSailingHud(level: LevelDef, onFastForward: (on: boolean) => void): SailingHud {
   const s = t();
   const root = el('aside', 'hud-sidebar');
-  const title = el('div', 'hud-title');
-  title.append(
-    el('div', 'hud-level-label', fill(s.hud.levelLabel, { n: level.id })),
-    el('div', 'hud-level-name', s.levels[level.textKey].title)
-  );
-  const status = el('div', 'hud-hint hud-sailing', s.hud.sailing);
   const meters = createMetersPanel(level);
-  const targets = el(
-    'div',
-    'hud-targets',
-    fill(s.hud.targets, { cost: formatCost(level.costTargetK), co2: formatCo2(level.co2TargetT) })
-  );
   const box = el('section', 'hud-section');
-  box.append(meters.root, targets);
+  box.append(meters.root);
 
   const actions = el('div', 'hud-actions');
   const ff = el('button', 'hud-btn hud-btn-secondary', `${s.hud.fastForward} ▶▶`);
@@ -42,7 +30,7 @@ export function createSailingHud(level: LevelDef, onFastForward: (on: boolean) =
   });
   actions.append(ff);
 
-  root.append(title, status, box, actions);
+  root.append(box, actions);
   return {
     root,
     update: (totals) => meters.update(totals),

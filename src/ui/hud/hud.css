@@ -26,16 +26,16 @@
 
 .hud-sidebar {
   position: absolute;
-  top: 0;
-  right: 0;
-  width: 300px;
-  height: 720px;
+  top: 12px;
+  right: 12px;
+  width: 240px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 14px 16px;
+  padding: 12px;
   background: linear-gradient(180deg, #06243a 0%, #031828 100%);
-  border-left: 2px solid #0e3b5a;
+  border: 1px solid #0e3b5a;
+  border-radius: 6px;
   font-size: 13px;
   user-select: none;
 }
@@ -388,8 +388,8 @@
 
 .star {
   color: rgb(255 255 255 / 18%);
-  transform: scale(0.6);
-  animation: star-pop 0.4s ease-out forwards;
+  opacity: 0;
+  animation: star-pop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 .star.is-earned {
@@ -436,6 +436,19 @@
 .results-table .is-ok .mark { color: #6fd173; }
 .results-table .is-miss .mark { color: #ff8a8a; }
 
+.results-fact {
+  margin: -8px 0 16px;
+  padding: 9px 12px;
+  border-left: 3px solid #f36c21;
+  background: rgb(255 255 255 / 7%);
+  text-align: left;
+  color: #dcecf4;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.results-fact strong { color: #ffb27f; }
+
 .overlay-actions {
   display: flex;
   gap: 10px;
@@ -450,9 +463,14 @@
 }
 
 @keyframes star-pop {
-  0% { transform: scale(0.4); }
-  70% { transform: scale(1.25); }
-  100% { transform: scale(1); }
+  0% { opacity: 0; transform: translateY(-80px) scale(2.4) rotate(-18deg); }
+  55% { opacity: 1; transform: translateY(5px) scale(0.85) rotate(4deg); }
+  75% { transform: translateY(-6px) scale(1.12) rotate(-2deg); }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .star { animation-duration: 0.01ms; animation-delay: 0ms !important; }
 }
 
 /* ---------- Level select ---------- */

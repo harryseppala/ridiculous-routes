@@ -1,3 +1,4 @@
+import { roundPolygonCorners } from '../geometry';
 import type { LevelDef } from './types';
 
 /**
@@ -16,12 +17,12 @@ export const level1: LevelDef = {
   co2TargetT: 800,
   windZones: [
     {
-      polygon: [
+      polygon: roundPolygonCorners([
         { x: 246, y: 326 },
         { x: 318, y: 326 },
         { x: 318, y: 370 },
         { x: 246, y: 370 },
-      ],
+      ]),
       dir: { x: 0, y: 1 },
       knots: 25,
       strength: 'strong',

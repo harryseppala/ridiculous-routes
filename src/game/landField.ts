@@ -41,10 +41,7 @@ export class LandField {
   distToLand(p: Vec): number {
     const i = this.index(p);
     if (i < 0) return 0;
-    const x = Math.floor(p.x * this.scale);
-    const y = Math.floor(p.y * this.scale);
-    const edge = Math.min(x + 1, y + 1, this.width - x, this.height - y);
-    return Math.min(this.dist[i], edge) / this.scale;
+    return this.dist[i] / this.scale;
   }
 
   segmentHitsLand(a: Vec, b: Vec): boolean {

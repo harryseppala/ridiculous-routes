@@ -121,6 +121,22 @@ describe('simulate: coastal wind', () => {
     expect(simulate(strongWind, straight(), openSea).failure).toBeUndefined();
   });
 
+  it('does not mistake the edge of the map for land during a storm', () => {
+    const storm = level({ windZones: [{ polygon: everywhere, dir: { x: 1, y: 0 }, knots: 40, strength: 'storm' }] });
+    const route: Route = { points: [{ x: 1, y: 80 }, { x: 30, y: 80 }], speeds: ['normal'] };
+    expect(simulate(storm, route, openSea).failure).toBeUndefined();
+  });
+
+  it('lets a slower ship reach a coast after a storm has faded', () => {
+    const nearCoast = syntheticLandField(W, H, [{ x: 100, y: 0, w: 10, h: 76 }]);
+    const storm = level({ windZones: [{
+      polygon: box(80, 0, 130, 100), dir: { x: 0, y: 1 }, knots: 40, strength: 'storm',
+      weather: { fromHour: 80, toHour: 120, fromIntensity: 1, toIntensity: 0 },
+    }] });
+    expect(simulate(storm, straight('fast'), nearCoast).failure?.reason).toBe('coastalWind');
+    expect(simulate(storm, straight('slow'), nearCoast).failure).toBeUndefined();
+  });
+
   it('light wind near land is safe', () => {
     const nearCoast = syntheticLandField(W, H, [{ x: 100, y: 0, w: 10, h: 76 }]);
     const light = level({
@@ -188,6 +204,19 @@ describe('simulateEstimate', () => {
 });
 
 describe('environmentAt', () => {
+  it('weakens and strengthens weather according to voyage time', () => {
+    const lv = level({ windZones: [{
+      polygon: everywhere, dir: { x: 1, y: 0 }, knots: 40, strength: 'storm',
+      weather: { fromHour: 10, toHour: 30, fromIntensity: 1, toIntensity: 0 },
+    }] });
+    expect(environmentAt(lv, { x: 20, y: 80 }, 0).windStrength).toBe('storm');
+    expect(environmentAt(lv, { x: 20, y: 80 }, 20).windStrength).toBe('light');
+    expect(environmentAt(lv, { x: 20, y: 80 }, 30).windStrength).toBe('none');
+    lv.windZones[0].weather = { fromHour: 10, toHour: 30, fromIntensity: 0, toIntensity: 1 };
+    expect(environmentAt(lv, { x: 20, y: 80 }, 0).windStrength).toBe('none');
+    expect(environmentAt(lv, { x: 20, y: 80 }, 30).windStrength).toBe('storm');
+  });
+
   it('strongest wind wins and currents add', () => {
     const lv = level({
       windZones: [

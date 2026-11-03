@@ -7,7 +7,7 @@ export const level5: LevelDef = {
   viewport: { x: 285, y: 400, w: 180, h: 132.2 },
   start: { x: 300, y: 455 },
   end: { x: 400, y: 495 },
-  budgetK: 420,
+  budgetK: 325,
   deadlineH: 128,
   costTargetK: 290,
   co2TargetT: 850,

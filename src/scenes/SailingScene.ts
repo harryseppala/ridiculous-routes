@@ -23,9 +23,7 @@ export interface VoyageEndData extends SailingSceneData {
 }
 
 const SHIP_KEY = 'ship';
-const MIN_MS = 6000;
-const MAX_MS = 10000;
-const MS_PER_SAMPLE = 30;
+const MS_PER_HOUR = 60;
 
 export class SailingScene extends Phaser.Scene {
   private data_!: SailingSceneData;
@@ -34,7 +32,7 @@ export class SailingScene extends Phaser.Scene {
   private ship!: Phaser.GameObjects.Image;
   private hud!: SailingHud;
   private progress = 0;
-  private durationMs = MIN_MS;
+  private durationMs = 0;
   private speedMul = 1;
   private finished = false;
 
@@ -48,10 +46,7 @@ export class SailingScene extends Phaser.Scene {
     this.progress = 0;
     this.speedMul = 1;
     this.finished = false;
-    const n = data.result.samples.length;
-    this.durationMs = Phaser.Math.Clamp(n * MS_PER_SAMPLE, MIN_MS, MAX_MS);
-    // A failed voyage stops early: play only the sailed part at the same pace.
-    if (data.result.failure) this.durationMs = Math.max(2500, n * MS_PER_SAMPLE * 0.8);
+    this.durationMs = Math.max(1, data.result.totals.hours * MS_PER_HOUR);
   }
 
   create(): void {
@@ -82,19 +77,20 @@ export class SailingScene extends Phaser.Scene {
   }
 
   update(time: number, delta: number): void {
-    this.hazards.update(time);
     if (this.finished) return;
     const samples = this.data_.result.samples;
     this.progress = Math.min(1, this.progress + (delta * this.speedMul) / this.durationMs);
-    const f = this.progress * (samples.length - 1);
-    const i = Math.min(samples.length - 2, Math.floor(f));
     if (samples.length < 2) {
       this.finish();
       return;
     }
+    const hours = this.progress * this.data_.result.totals.hours;
+    let i = 0;
+    while (i < samples.length - 2 && samples[i + 1].hours < hours) i++;
     const a = samples[i];
     const b = samples[i + 1];
-    const k = f - i;
+    const k = b.hours === a.hours ? 1 : (hours - a.hours) / (b.hours - a.hours);
+    this.hazards.update(time, hours);
     const pos = lerp(a.pos, b.pos, k);
     this.ship.setPosition(pos.x, pos.y);
     if (a.pos.x !== b.pos.x || a.pos.y !== b.pos.y) {

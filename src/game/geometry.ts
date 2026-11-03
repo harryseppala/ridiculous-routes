@@ -17,6 +17,17 @@ export function lerp(a: Vec, b: Vec, t: number): Vec {
   return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
 }
 
+export function roundPolygonCorners(poly: readonly Vec[], inset = 0.25): Vec[] {
+  return poly.flatMap((corner, index) => {
+    const before = lerp(corner, poly[(index + poly.length - 1) % poly.length], inset);
+    const after = lerp(corner, poly[(index + 1) % poly.length], inset);
+    return Array.from({ length: 5 }, (_, step) => {
+      const progress = step / 4;
+      return lerp(lerp(before, corner, progress), lerp(corner, after, progress), progress);
+    });
+  });
+}
+
 /** Even-odd ray casting. */
 export function pointInPolygon(p: Vec, poly: readonly Vec[]): boolean {
   let inside = false;

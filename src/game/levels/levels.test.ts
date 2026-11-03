@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { simulate, validateRoute } from '../simulate';
+import { simulate, simulateEstimate, validateRoute } from '../simulate';
 import { realLandField } from '../testing/loadLandField';
 import { WORLD } from '../world';
 import { LEVELS } from './index';
@@ -66,6 +66,22 @@ describe.each(LEVELS.map((l) => [l.id, l] as const))('level %i', (_id, level) =>
 });
 
 describe('levels', () => {
+  it('requires mixed speeds rather than a single straight leg in level 5', () => {
+    const level = LEVELS[4];
+    for (const speed of ['slow', 'normal', 'fast'] as const) {
+      const straight = { points: [level.start, level.end], speeds: [speed] };
+      expect(simulate(level, straight, land).failure).toBeDefined();
+    }
+  });
+
+  it('makes the wind detour cheaper than the direct crossing in level 3', () => {
+    const level = LEVELS[2];
+    const direct = { points: [level.start, level.end], speeds: ['normal' as const] };
+    const calm = { ...level, windZones: [] };
+    expect(simulateEstimate(calm, direct, land).totals.costK).toBeLessThan(simulateEstimate(calm, level.referenceRoute, land).totals.costK);
+    expect(simulateEstimate(level, direct, land).totals.costK).toBeGreaterThan(simulateEstimate(level, level.referenceRoute, land).totals.costK);
+  });
+
   it('have sequential ids starting at 1', () => {
     expect(LEVELS.map((l) => l.id)).toEqual(LEVELS.map((_, i) => i + 1));
   });

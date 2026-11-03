@@ -104,6 +104,12 @@
         fill: #006838;
       }
 
+      .st26 {
+        stroke: #003e2b;
+        stroke-width: .8px;
+        stroke-linejoin: round;
+      }
+
       .st12 {
         fill: #6ec0d8;
       }

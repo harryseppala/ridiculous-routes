@@ -1,3 +1,4 @@
+import { roundPolygonCorners } from '../geometry';
 import type { LevelDef } from './types';
 
 /** The grand passage: storm in the island channel, a helpful current, a regulated area and a tight schedule. */
@@ -13,15 +14,16 @@ export const level7: LevelDef = {
   co2TargetT: 890,
   windZones: [
     {
-      polygon: [
+      polygon: roundPolygonCorners([
         { x: 48, y: 98 },
         { x: 128, y: 98 },
         { x: 128, y: 124 },
         { x: 48, y: 124 },
-      ],
+      ]),
       dir: { x: 0.6, y: 0.8 },
       knots: 40,
       strength: 'storm',
+      weather: { fromHour: 80, toHour: 150, fromIntensity: 1, toIntensity: 0 },
     },
   ],
   ecas: [

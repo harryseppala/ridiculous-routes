@@ -7,6 +7,7 @@ export interface TutorialCard {
   root: HTMLElement;
   showStep(step: TutorialStepId, n: number, total: number, canContinue: boolean): void;
   showReady(): void;
+  showSkip(): void;
   destroy(): void;
 }
 
@@ -42,6 +43,10 @@ export function createTutorialCard(onContinue: () => void): TutorialCard {
       step.textContent = '';
       text.textContent = s.ready;
       cont.hidden = true;
+    },
+    showSkip() {
+      cont.textContent = s.skipDemo;
+      cont.hidden = false;
     },
     destroy: () => root.remove(),
   };

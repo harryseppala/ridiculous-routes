@@ -41,6 +41,10 @@ describe('LandField (synthetic)', () => {
     expect(field.distToLand({ x: 120, y: 100 })).toBeCloseTo(20, 0);
   });
 
+  it('does not count the map edge as a coastline', () => {
+    expect(field.distToLand({ x: 1, y: 100 })).toBeGreaterThan(100);
+  });
+
   it('detects segments crossing land', () => {
     expect(field.segmentHitsLand({ x: 100, y: 25 }, { x: 180, y: 25 })).toBe(true);
     expect(field.segmentHitsLand({ x: 100, y: 10 }, { x: 135, y: 40 })).toBe(false);

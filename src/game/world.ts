@@ -19,8 +19,8 @@ export const MAP_TEXTURE_SIZE = {
 export const LAYOUT = {
   gameWidth: 1280,
   gameHeight: 720,
-  sidebarWidth: 300,
-  mapWidth: 980,
+  sidebarWidth: 252,
+  mapWidth: 1280,
 } as const;
 
 export function worldToMask(p: Vec): Vec {

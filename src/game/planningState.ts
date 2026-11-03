@@ -176,6 +176,14 @@ export class PlanningState {
     return true;
   }
 
+  cycleLegSpeed(i: number): boolean {
+    const cycle: Speed[] = ['normal', 'fast', 'slow'];
+    const allowed = cycle.filter((speed) => !this.allowedSpeeds || this.allowedSpeeds.includes(speed));
+    const current = this.route.speeds[i];
+    if (!current || allowed.length < 2) return false;
+    return this.setLegSpeed(i, allowed[(allowed.indexOf(current) + 1) % allowed.length]);
+  }
+
   setAllSpeeds(speed: Speed): boolean {
     if (this.legCount === 0 || this.route.speeds.every((s) => s === speed)) return false;
     if (this.allowedSpeeds && !this.allowedSpeeds.includes(speed)) return false;

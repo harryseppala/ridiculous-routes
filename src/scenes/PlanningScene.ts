@@ -7,7 +7,7 @@ import { PlanningState, type PlanningOp } from '../game/planningState';
 import { progress } from '../game/progress';
 import { routeTouchesEca, TutorialController, type TutorialContext } from '../game/tutorial';
 import { simulate, simulateEstimate, validateRoute, type RouteValidation } from '../game/simulate';
-import type { Route, Speed, Vec, VoyageResult } from '../game/types';
+import type { Route, Vec, VoyageResult } from '../game/types';
 import { mountForScene } from '../ui/hud/hudLayer';
 import { createIntroCard } from '../ui/hud/introCard';
 import { createPlanningHud, type HudHighlight, type PlanningHud } from '../ui/hud/planningHud';
@@ -17,6 +17,7 @@ import { HazardView } from './hazardView';
 import { addWorldMap, getLandField, isOverSidebar, setupMapCamera } from './mapView';
 import { RouteView } from './routeView';
 import { SCENE_KEYS } from './sceneKeys';
+import { worldText } from './worldText';
 
 export interface PlanningSceneData {
   levelId?: number;
@@ -34,6 +35,7 @@ const HIT_PX = { waypoint: 11, port: 18, leg: 8, label: 16 } as const;
 interface DragState {
   index: number;
   moved: boolean;
+  origin: Vec;
   /** Inserted by this click: cancelling undoes the insertion. */
   inserted: boolean;
   pending: Vec | null;
@@ -101,12 +103,11 @@ export class PlanningScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-ESC', () => this.backToLevels());
 
     this.hud = createPlanningHud(this.level, {
-      onSpeed: (speed, all) => this.onSpeed(speed, all),
       onUndo: () => this.state.undo(),
       onGo: () => this.go(),
       onBack: () => this.backToLevels(),
       onShowTutorial:
-        this.level.tutorial?.length && !this.tutorial
+        this.level.tutorial?.length
           ? () => this.scene.restart({ levelId: this.level.id, forceTutorial: true })
           : undefined,
     });
@@ -133,18 +134,71 @@ export class PlanningScene extends Phaser.Scene {
   /** Called once planning becomes interactive. */
   protected onIntroDismissed(): void {
     if (!this.tutorial) return;
-    this.tutorialCard = createTutorialCard(() => {
-      if (this.tutorial?.continue(this.tutorialContext())) this.updateTutorialUi();
-    });
+    this.input.enabled = false;
+    this.hud.root.style.pointerEvents = 'none';
+    let active = true;
+    let motion: Phaser.Tweens.Tween | undefined;
+    const cursor = worldText(this, this.level.start.x, this.level.start.y, '👆', this.cam.zoom, 32, {
+      strokeThickness: 0,
+    }).setOrigin(0.25, 0.1).setDepth(50);
+    const finish = (): void => {
+      if (!active) return;
+      active = false;
+      motion?.stop();
+      cursor.destroy();
+      this.state.reset();
+      this.state.undoStack.length = 0;
+      this.pendingOps = [];
+      this.tutorial = undefined;
+      this.input.enabled = true;
+      this.hud.root.style.pointerEvents = '';
+      this.tutorialCard?.showReady();
+      this.time.delayedCall(4000, () => {
+        this.tutorialCard?.destroy();
+        this.tutorialCard = undefined;
+      });
+      progress.setTutorialDone(true);
+      this.dirty = true;
+    };
+    this.tutorialCard = createTutorialCard(finish);
     mountForScene(this, this.tutorialCard.root);
-    const zoom = this.cam.zoom;
-    this.portPulse = this.add.circle(0, 0, 14 / zoom, 0xffd27a, 0).setStrokeStyle(3 / zoom, 0xffd27a, 1).setDepth(25);
-    this.tweens.add({ targets: this.portPulse, scale: { from: 0.8, to: 1.6 }, alpha: { from: 1, to: 0 }, duration: 1100, repeat: -1 });
-    this.tutorial.start(this.tutorialContext());
-    this.tutorialStarted = true;
-    this.pendingOps = [];
-    this.updateTutorialUi();
-    this.refresh();
+    const midpoint = { x: (this.level.start.x + this.level.end.x) / 2, y: (this.level.start.y + this.level.end.y) / 2 };
+    const waypoint = this.level.referenceRoute.points[1] ?? midpoint;
+    const secondWaypoint = this.level.referenceRoute.points[2] ?? waypoint;
+    const secondMidpoint = { x: (waypoint.x + this.level.end.x) / 2, y: (waypoint.y + this.level.end.y) / 2 };
+    const steps: { step: 'straightRoute' | 'waypoints' | 'wind' | 'eca' | 'speed'; point: Vec; action: () => void }[] = [
+      { step: 'straightRoute', point: this.level.start, action: () => { this.state.clickStart(); } },
+      { step: 'straightRoute', point: this.level.end, action: () => { this.state.clickEnd(); } },
+      { step: 'waypoints', point: midpoint, action: () => { this.state.insertWaypoint(0, midpoint); } },
+      { step: 'waypoints', point: waypoint, action: () => { this.state.moveWaypoint(1, waypoint); } },
+      { step: 'waypoints', point: secondMidpoint, action: () => { this.state.insertWaypoint(1, secondMidpoint); } },
+      { step: 'waypoints', point: secondWaypoint, action: () => { this.state.moveWaypoint(2, secondWaypoint); } },
+      { step: 'wind', point: this.level.windZones[0]?.polygon[0] ?? waypoint, action: () => {} },
+      { step: 'eca', point: this.level.ecas[0]?.[0] ?? waypoint, action: () => {} },
+      { step: 'speed', point: waypoint, action: () => { this.state.cycleLegSpeed(0); } },
+    ];
+    const play = (index: number): void => {
+      if (!active) return;
+      const step = steps[index];
+      if (!step) {
+        finish();
+        return;
+      }
+      this.tutorialCard?.showStep(step.step, index + 1, steps.length, false);
+      this.tutorialCard?.showSkip();
+      motion = this.tweens.add({
+        targets: cursor, x: step.point.x, y: step.point.y, duration: 1100, ease: 'Sine.easeInOut',
+        onComplete: () => {
+          if (!active) return;
+          step.action();
+          motion = this.tweens.add({
+            targets: cursor, alpha: 0.45, duration: 180, yoyo: true, hold: 650,
+            onComplete: () => play(index + 1),
+          });
+        },
+      });
+    };
+    play(0);
   }
 
   private tutorialContext(): TutorialContext {
@@ -191,11 +245,6 @@ export class PlanningScene extends Phaser.Scene {
     return !this.tutorial || this.tutorial.allows(op);
   }
 
-  protected onSpeed(speed: Speed, allLegs: boolean): void {
-    if (allLegs) this.state.setAllSpeeds(speed);
-    else if (this.state.selectedLeg !== null) this.state.setLegSpeed(this.state.selectedLeg, speed);
-  }
-
   protected go(): void {
     if (!this.canGo()) return;
     const route = this.state.snapshot();
@@ -204,6 +253,10 @@ export class PlanningScene extends Phaser.Scene {
   }
 
   update(time: number): void {
+    const pointer = this.input.activePointer;
+    const world = this.worldPoint(pointer);
+    const hoveredPort = isOverSidebar(pointer) ? null : this.nearPort(world, this.level.start) ? 0 : this.nearPort(world, this.level.end) ? 1 : null;
+    this.hazards.setPortFeedback(hoveredPort, this.state.stage === 'pickStart' && this.input.enabled);
     this.hazards.update(time);
     if (this.drag?.pending) {
       this.state.moveWaypoint(this.drag.index, this.drag.pending);
@@ -330,7 +383,7 @@ export class PlanningScene extends Phaser.Scene {
 
     const wp = this.hitWaypoint(w);
     if (wp !== null) {
-      if (s.beginMove(wp)) this.drag = { index: wp, moved: false, inserted: false, pending: null };
+      if (s.beginMove(wp)) this.drag = { index: wp, moved: false, origin: w, inserted: false, pending: null };
       return;
     }
 
@@ -348,12 +401,13 @@ export class PlanningScene extends Phaser.Scene {
     const label = this.hitLabel(w);
     if (label !== null) {
       s.selectLeg(label);
+      s.cycleLegSpeed(label);
       return;
     }
     const leg = this.hitLeg(w);
     if (leg !== null && !this.land.isLand(w) && this.allows('insertWaypoint')) {
       const idx = s.insertWaypoint(leg, w);
-      if (idx !== null) this.drag = { index: idx, moved: false, inserted: true, pending: null };
+      if (idx !== null) this.drag = { index: idx, moved: false, origin: w, inserted: true, pending: null };
       return;
     }
     if (leg !== null) {
@@ -369,8 +423,10 @@ export class PlanningScene extends Phaser.Scene {
   private onPointerMove(pointer: Phaser.Input.Pointer): void {
     const w = this.worldPoint(pointer);
     if (this.drag) {
-      this.drag.moved = true;
-      this.drag.pending = w;
+      if (this.drag.moved || dist(w, this.drag.origin) > this.r(3)) {
+        this.drag.moved = true;
+        this.drag.pending = w;
+      }
       return;
     }
     if (isOverSidebar(pointer)) return;
@@ -400,8 +456,10 @@ export class PlanningScene extends Phaser.Scene {
     }
     if (!drag.moved || onLand) {
       this.state.cancelMove();
-      // A click (no drag) on a waypoint selects the leg leading into it.
-      if (!drag.moved && pointer.leftButtonReleased()) this.state.selectLeg(drag.index - 1);
+      if (!drag.moved && pointer.leftButtonReleased()) {
+        this.state.selectLeg(drag.index - 1);
+        this.state.cycleLegSpeed(drag.index - 1);
+      }
     }
   }
 }

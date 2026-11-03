@@ -14,7 +14,6 @@ export interface LevelMarker {
 
 export interface LevelSelectCallbacks {
   onSelect(id: number): void;
-  onHover(id: number | null): void;
   onBack(): void;
 }
 
@@ -31,7 +30,7 @@ export function createLevelSelectView(markers: LevelMarker[], cb: LevelSelectCal
   const back = el('button', 'hud-link ls-back', `← ${s.levelSelect.backToTitle}`);
   back.type = 'button';
   back.addEventListener('click', () => cb.onBack());
-  header.append(back, el('h1', 'ls-heading', s.levelSelect.heading), el('p', 'ls-subtitle', s.levelSelect.subtitle));
+  header.append(back, el('h1', 'ls-heading', s.levelSelect.heading));
   root.append(header);
 
   for (const m of markers) {
@@ -45,29 +44,10 @@ export function createLevelSelectView(markers: LevelMarker[], cb: LevelSelectCal
 
     const badge = el('span', 'ls-badge', m.unlocked ? String(m.level.id) : '🔒');
     const stars = el('span', 'ls-stars', starString(m.stars));
-    const tip = el('span', 'ls-tip');
-    tip.append(
-      el('strong', '', `${fill(s.hud.levelLabel, { n: m.level.id })} · ${names.title}`),
-      el('span', '', m.unlocked ? fill(s.levelSelect.newElement, { element: names.newElement }) : s.levelSelect.locked)
-    );
-    marker.append(badge, stars, tip);
+    marker.append(badge, stars);
 
-    // Locked markers still show their tooltip on hover but are not clickable.
-    const hoverTarget = m.unlocked ? marker : wrapForHover(marker);
-    hoverTarget.addEventListener('mouseenter', () => cb.onHover(m.level.id));
-    hoverTarget.addEventListener('mouseleave', () => cb.onHover(null));
     if (m.unlocked) marker.addEventListener('click', () => cb.onSelect(m.level.id));
-    root.append(hoverTarget);
+    root.append(marker);
   }
   return root;
-}
-
-function wrapForHover(marker: HTMLElement): HTMLElement {
-  const wrap = el('div', 'ls-marker-wrap');
-  wrap.style.left = marker.style.left;
-  wrap.style.top = marker.style.top;
-  marker.style.left = '0';
-  marker.style.top = '0';
-  wrap.append(marker);
-  return wrap;
 }

@@ -55,7 +55,7 @@ function run(level: SimLevel, points: Vec[], speeds: Speed[], land: LandField, o
     for (let i = 1; i <= n; i++) {
       const pos = lerp(a, b, i / n);
       const mid = lerp(a, b, (i - 0.5) / n);
-      const env = environmentAt(level, mid);
+      const env = environmentAt(level, mid, hours);
       const alongWind = dot(env.wind, dir);
       const alongCurrent = dot(env.current, dir);
       const effSpeed = Math.max(MIN_EFF_SPEED, v + WIND_SPEED_GAIN * alongWind + CURRENT_SPEED_GAIN * alongCurrent);
@@ -69,7 +69,7 @@ function run(level: SimLevel, points: Vec[], speeds: Speed[], land: LandField, o
       samples.push({ pos, legIndex: leg, costK, hours, co2T });
 
       if (opts.checkFailures) {
-        const reason = failureAt(level, land, pos, env.windStrength, costK, hours);
+        const reason = failureAt(level, land, pos, environmentAt(level, pos, hours).windStrength, costK, hours);
         if (reason) {
           failure = { reason, sampleIndex: samples.length - 1 };
           break legs;

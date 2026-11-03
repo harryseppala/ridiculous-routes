@@ -11,8 +11,7 @@ export function createIntroCard(level: LevelDef, onStart: () => void): HTMLEleme
   const card = el('div', 'overlay-card intro-card');
   root.append(card);
   card.append(
-    el('div', 'hud-level-label', fill(s.hud.levelLabel, { n: level.id })),
-    el('h2', 'overlay-title', names.title),
+    el('h2', 'overlay-title', fill(s.hud.levelLabel, { n: level.id })),
     el('div', 'intro-new', `${s.intro.newLabel}: ${names.newElement}`),
     el('p', 'intro-text', names.intro)
   );

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { windIntensity } from '../game/environment';
 import { dot, normalize, pointInPolygon, polygonBounds, polygonCentroid } from '../game/geometry';
 import type { CurrentZone, LevelDef, WindZone } from '../game/levels/types';
 import type { Vec } from '../game/types';
@@ -14,6 +15,10 @@ export class HazardView {
   private readonly currentGfx: Phaser.GameObjects.Graphics;
   private readonly stormGfx: Phaser.GameObjects.Graphics;
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
+  private readonly weatherGraphics: { zone: WindZone; graphics: Phaser.GameObjects.Graphics[] }[] = [];
+  private readonly ports: Phaser.GameObjects.Container[] = [];
+  private hoveredPort: number | null = null;
+  private departurePending = false;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -22,12 +27,22 @@ export class HazardView {
   ) {
     this.px = 1 / zoom;
     const zones = this.track(scene.add.graphics().setDepth(DEPTH.zones));
-    const arrows = this.track(scene.add.graphics().setDepth(DEPTH.arrows));
     this.stormGfx = this.track(scene.add.graphics().setDepth(DEPTH.arrows));
     this.currentGfx = this.track(scene.add.graphics().setDepth(DEPTH.zones));
 
     for (const eca of level.ecas) this.drawEca(zones, eca);
-    for (const zone of level.windZones) this.drawWindZone(zones, arrows, zone);
+    for (const zone of level.windZones) {
+      const wind = this.track(scene.add.graphics().setDepth(DEPTH.zones));
+      const arrows = this.track(scene.add.graphics().setDepth(DEPTH.arrows));
+      this.weatherGraphics.push({ zone, graphics: [wind, arrows] });
+      this.drawWindZone(wind, arrows, zone);
+      if (zone.weather) {
+        const center = polygonCentroid(zone.polygon);
+        const text = zone.weather.toIntensity > zone.weather.fromIntensity ? 'Wind builds' : 'Storm fades';
+        this.track(worldText(scene, center.x, center.y, `${text} · ${zone.weather.toHour}h`, zoom, 11, { fontStyle: 'bold' })
+          .setOrigin(0.5).setDepth(DEPTH.arrows + 1));
+      }
+    }
     this.drawPorts();
   }
 
@@ -69,7 +84,6 @@ export class HazardView {
       zones.fillPoints(z.polygon, true);
       zones.lineStyle(2 * px, PALETTE.stormFlash, 0.8);
       zones.strokePoints(z.polygon, true);
-      this.animateStorm(z);
     } else if (z.strength === 'strong') {
       zones.fillStyle(PALETTE.windStrong, 0.28);
       zones.fillPoints(z.polygon, true);
@@ -94,22 +108,6 @@ export class HazardView {
     }
   }
 
-  private animateStorm(z: WindZone): void {
-    const flash = this.track(this.scene.add.graphics().setDepth(DEPTH.arrows));
-    flash.fillStyle(PALETTE.stormFlash, 1);
-    flash.fillPoints(z.polygon, true);
-    flash.setAlpha(0);
-    this.scene.tweens.add({
-      targets: flash,
-      alpha: { from: 0, to: 0.35 },
-      duration: 90,
-      yoyo: true,
-      repeat: -1,
-      repeatDelay: 2400,
-      delay: Math.random() * 1500,
-    });
-  }
-
   private drawPorts(): void {
     const names = t().levels[this.level.textKey];
     this.drawPort(this.level.start, names.startName);
@@ -118,36 +116,49 @@ export class HazardView {
 
   private drawPort(p: Vec, name: string): void {
     const px = this.px;
-    const g = this.track(this.scene.add.graphics().setDepth(DEPTH.ports));
+    const g = this.scene.add.graphics();
     g.fillStyle(PALETTE.port, 1);
     g.lineStyle(2 * px, PALETTE.portStroke, 1);
-    g.fillCircle(p.x, p.y, 9 * px);
-    g.strokeCircle(p.x, p.y, 9 * px);
+    g.fillCircle(0, 0, 11 * px);
+    g.strokeCircle(0, 0, 11 * px);
     // Simple anchor glyph.
     g.lineStyle(1.8 * px, PALETTE.portStroke, 1);
-    g.strokeCircle(p.x, p.y - 4.5 * px, 1.5 * px);
-    g.lineBetween(p.x, p.y - 3 * px, p.x, p.y + 5 * px);
-    g.lineBetween(p.x - 3 * px, p.y - 1 * px, p.x + 3 * px, p.y - 1 * px);
+    g.strokeCircle(0, -5 * px, 1.5 * px);
+    g.lineBetween(0, -3.5 * px, 0, 6 * px);
+    g.lineBetween(-3.5 * px, -1 * px, 3.5 * px, -1 * px);
     g.beginPath();
-    g.arc(p.x, p.y + 1 * px, 4.5 * px, Phaser.Math.DegToRad(20), Phaser.Math.DegToRad(160));
+    g.arc(0, 1 * px, 5 * px, Phaser.Math.DegToRad(20), Phaser.Math.DegToRad(160));
     g.strokePath();
-    this.track(
-      worldText(this.scene, p.x, p.y + 12 * px, name, this.zoom, 13, { fontStyle: 'bold' })
-        .setOrigin(0.5, 0)
-        .setDepth(DEPTH.ports)
-    );
+    const label = worldText(this.scene, 0, 14 * px, name, this.zoom, 13, {
+      fontStyle: 'bold', resolution: Math.max(2, (window.devicePixelRatio || 1) * 2),
+    }).setOrigin(0.5, 0);
+    const port = this.track(this.scene.add.container(p.x, p.y, [g, label]).setDepth(DEPTH.ports));
+    this.ports.push(port);
+  }
+
+  setPortFeedback(hovered: number | null, departurePending: boolean): void {
+    this.hoveredPort = hovered;
+    this.departurePending = departurePending;
   }
 
   /** Animate currents and storm swirls. Call from scene.update. */
-  update(time: number): void {
+  update(time: number, hours = 0): void {
     const px = this.px;
+    this.ports.forEach((port, index) => {
+      port.setScale(Phaser.Math.Linear(port.scaleX, index === this.hoveredPort ? 1.22 : 1, 0.18));
+      port.x = (index === 0 ? this.level.start.x : this.level.end.x) +
+        (index === 0 && this.departurePending ? Math.sin(time / 75) * 1.2 * px : 0);
+    });
+    for (const { zone, graphics } of this.weatherGraphics) {
+      for (const graphic of graphics) graphic.setAlpha(windIntensity(zone, hours));
+    }
     this.currentGfx.clear();
     for (const c of this.level.currents) drawCurrent(this.currentGfx, c, time, px);
 
     this.stormGfx.clear();
     this.stormGfx.lineStyle(2 * px, PALETTE.stormFlash, 0.55);
     for (const z of this.level.windZones) {
-      if (z.strength !== 'storm') continue;
+      if (z.strength !== 'storm' || windIntensity(z, hours) < 0.05) continue;
       const c = polygonCentroid(z.polygon);
       const rot = time / 900;
       for (let arm = 0; arm < 3; arm++) {

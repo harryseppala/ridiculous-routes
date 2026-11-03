@@ -49,6 +49,10 @@ export function createResultsView(
   row(s.results.co2Target, formatCo2(totals.co2T), formatCo2(level.co2TargetT), totals.co2T <= level.co2TargetT);
   card.append(table);
 
+  const fact = el('div', 'results-fact');
+  fact.append(el('strong', '', s.results.factLabel), el('p', '', s.results.facts[level.id - 1] ?? s.results.facts[0]));
+  card.append(fact);
+
   const actions = el('div', 'overlay-actions');
   const button = (label: string, cls: string, fn: () => void): HTMLButtonElement => {
     const b = el('button', `hud-btn ${cls}`, label);

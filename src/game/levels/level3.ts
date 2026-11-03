@@ -1,3 +1,4 @@
+import { roundPolygonCorners } from '../geometry';
 import type { LevelDef } from './types';
 
 /** Wind & storms: the short way is into a headwind; a tailwind detour wins; storms by a coast wreck ships. */
@@ -14,36 +15,37 @@ export const level3: LevelDef = {
   windZones: [
     {
       // Headwind over the direct crossing.
-      polygon: [
+      polygon: roundPolygonCorners([
         { x: 799.3, y: 393.3 },
         { x: 786.5, y: 377.9 },
         { x: 836.8, y: 336.5 },
         { x: 849.6, y: 351.9 },
-      ],
+      ]),
       dir: { x: -0.77, y: 0.64 },
       knots: 22,
       strength: 'strong',
+      weather: { fromHour: 0, toHour: 60, fromIntensity: 0.7, toIntensity: 1 },
     },
     {
       // Tailwind up the eastern side.
-      polygon: [
+      polygon: roundPolygonCorners([
         { x: 825, y: 412 },
         { x: 852, y: 412 },
         { x: 874, y: 335 },
         { x: 848, y: 326 },
-      ],
+      ]),
       dir: { x: 0.32, y: -0.95 },
       knots: 25,
       strength: 'strong',
     },
     {
       // Storm against the island's southern coast.
-      polygon: [
+      polygon: roundPolygonCorners([
         { x: 758, y: 345 },
         { x: 806, y: 345 },
         { x: 806, y: 369 },
         { x: 758, y: 369 },
-      ],
+      ]),
       dir: { x: 0, y: -1 },
       knots: 40,
       strength: 'storm',

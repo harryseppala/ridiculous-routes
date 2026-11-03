@@ -49,5 +49,5 @@ export function setupMapCamera(scene: Phaser.Scene, rect: Rect): Phaser.Cameras.
 
 /** True when a pointer (game coords) is over the HUD sidebar and must be ignored by the map. */
 export function isOverSidebar(pointer: Phaser.Input.Pointer): boolean {
-  return pointer.x >= LAYOUT.mapWidth;
+  return pointer.x >= LAYOUT.gameWidth - LAYOUT.sidebarWidth && pointer.y <= 260;
 }

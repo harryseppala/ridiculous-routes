@@ -48,19 +48,33 @@
 
 .hud-link {
   align-self: flex-start;
-  background: none;
-  border: none;
-  color: #cfe4f2;
+  background: #07527d;
+  border: 1px solid #347ba4;
+  border-radius: 6px;
+  color: #ffffff;
   font: inherit;
   cursor: pointer;
-  padding: 0;
+  padding: 5px 8px;
 }
 
 .hud-link:hover,
 .hud-link:focus-visible {
+  background: #f36c21;
   color: #ffffff;
   text-decoration: underline;
 }
+
+.hud-reason {
+  text-align: left;
+  line-height: 1.3;
+}
+
+.hud-reason:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.hud-reason[hidden] { display: none; }
 
 .hud-level-label {
   font-size: 11px;
@@ -289,17 +303,22 @@
 
 .hud-btn-primary {
   flex: 1.4;
-  background: #f36c21;
-  border: 2px solid #f36c21;
+  background: #07527d;
+  border: 2px solid #347ba4;
   color: #ffffff;
 }
 
-.hud-btn-primary:hover:not(:disabled) {
-  background: #ff8240;
+.hud-btn:hover:not(:disabled),
+.hud-btn:focus-visible:not(:disabled),
+.speed-btn:hover:not(:disabled),
+.speed-btn:focus-visible:not(:disabled) {
+  background: #f36c21;
+  border-color: #f36c21;
+  color: #ffffff;
 }
 
 .hud-btn-secondary {
-  background: transparent;
+  background: #07527d;
   border: 2px solid #4d7a99;
   color: #cfe4f2;
 }
@@ -487,20 +506,6 @@
   pointer-events: auto;
 }
 
-.ls-header {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 1280px;
-  height: 110px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: rgb(0 27 46 / 85%);
-}
-
 .ls-back {
   position: absolute;
   left: 32px;
@@ -550,7 +555,7 @@
   justify-content: center;
   font-size: 18px;
   font-weight: bold;
-  background: #f36c21;
+  background: #07527d;
   border: 3px solid #ffffff;
   box-shadow: 0 4px 12px rgb(0 0 0 / 45%);
   transition: transform 0.15s;
@@ -559,6 +564,11 @@
 .ls-marker:hover:not(:disabled) .ls-badge,
 .ls-marker:focus-visible .ls-badge {
   transform: scale(1.15);
+}
+
+.ls-marker:hover:not(:disabled) .ls-badge,
+.ls-marker:focus-visible .ls-badge {
+  background: #f36c21;
 }
 
 .ls-marker:focus-visible {

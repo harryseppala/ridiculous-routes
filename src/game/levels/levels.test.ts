@@ -8,9 +8,11 @@ const land = realLandField();
 const fmt = (n: number) => n.toFixed(1);
 
 describe.each(LEVELS.map((l) => [l.id, l] as const))('level %i', (_id, level) => {
-  it('has ports on open water', () => {
+  it('has navigable ports beside a coastline', () => {
     expect(land.distToLand(level.start)).toBeGreaterThan(2);
     expect(land.distToLand(level.end)).toBeGreaterThan(2);
+    expect(land.distToLand(level.start)).toBeLessThanOrEqual(4);
+    expect(land.distToLand(level.end)).toBeLessThanOrEqual(4);
   });
 
   it('has a viewport inside the world with the planning aspect', () => {

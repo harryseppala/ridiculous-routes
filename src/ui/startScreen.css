@@ -110,7 +110,7 @@ body {
 }
 
 .play-button:hover {
-  background: #00527a;
+  background: #f36c21;
   box-shadow: 0 0 16px rgb(243 108 33 / 35%);
   transform: translateY(-2px);
 }

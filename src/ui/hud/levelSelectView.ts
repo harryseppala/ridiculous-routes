@@ -21,17 +21,15 @@ export function starString(stars: number): string {
   return '★'.repeat(stars) + '☆'.repeat(3 - stars);
 }
 
-/** Header + one marker per level on the world map. */
+/** Back button and one marker per level on the world map. */
 export function createLevelSelectView(markers: LevelMarker[], cb: LevelSelectCallbacks): HTMLElement {
   const s = t();
   const root = el('div', 'level-select');
 
-  const header = el('header', 'ls-header');
   const back = el('button', 'hud-link ls-back', `← ${s.levelSelect.backToTitle}`);
   back.type = 'button';
   back.addEventListener('click', () => cb.onBack());
-  header.append(back, el('h1', 'ls-heading', s.levelSelect.heading));
-  root.append(header);
+  root.append(back);
 
   for (const m of markers) {
     const names = s.levels[m.level.textKey];

@@ -27,6 +27,16 @@ export function formatDuration(hours: number): string {
   return fill(u.daysHours, { d, h });
 }
 
+export function formatWeatherDuration(hours: number): string {
+  const total = Math.round(hours);
+  const d = Math.floor(total / 24);
+  const h = total % 24;
+  const u = t().weather;
+  if (d === 0) return fill(u.hours, { h });
+  if (h === 0) return fill(u.days, { d });
+  return fill(u.daysHours, { d, h });
+}
+
 export function formatCo2(tonnes: number): string {
   return fill(t().units.co2, { v: Math.round(tonnes) });
 }

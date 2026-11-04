@@ -31,8 +31,8 @@ export const level3: LevelDef = {
       polygon: roundPolygonCorners([
         { x: 825, y: 412 },
         { x: 852, y: 412 },
-        { x: 874, y: 335 },
-        { x: 848, y: 326 },
+        { x: 874, y: 342 },
+        { x: 848, y: 339 },
       ]),
       dir: { x: 0.32, y: -0.95 },
       knots: 25,

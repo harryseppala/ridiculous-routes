@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { firstArrival, waypointInsidePort } from '../game/arrival';
 import { dist, distToSegment } from '../game/geometry';
 import type { LandField } from '../game/landField';
 import { getLevel } from '../game/levels';
@@ -8,6 +9,8 @@ import { progress } from '../game/progress';
 import { routeTouchesEca, TutorialController, type TutorialContext } from '../game/tutorial';
 import { simulate, simulateEstimate, validateRoute, type RouteValidation } from '../game/simulate';
 import type { Route, Vec, VoyageResult } from '../game/types';
+import { t } from '../i18n';
+import { fill } from '../i18n/format';
 import { mountForScene } from '../ui/hud/hudLayer';
 import { createIntroCard } from '../ui/hud/introCard';
 import { createPlanningHud, type HudHighlight, type PlanningHud } from '../ui/hud/planningHud';
@@ -61,6 +64,7 @@ export class PlanningScene extends Phaser.Scene {
   private tutorialStarted = false;
   private pendingOps: PlanningOp[] = [];
   private portPulse?: Phaser.GameObjects.Arc;
+  private passingTip!: Phaser.GameObjects.Text;
 
   constructor() {
     super({ key: SCENE_KEYS.PLANNING });
@@ -82,10 +86,13 @@ export class PlanningScene extends Phaser.Scene {
 
   create(): void {
     this.land = getLandField(this);
-    addWorldMap(this);
+    addWorldMap(this, this.level.viewport);
     this.cam = setupMapCamera(this, this.level.viewport);
     this.hazards = new HazardView(this, this.level, this.cam.zoom);
     this.routeView = new RouteView(this, this.cam.zoom);
+    this.passingTip = worldText(this, 0, 0, t().hints.passingPort, this.cam.zoom, 11, {
+      backgroundColor: '#0b1e33', padding: { x: 5, y: 3 },
+    }).setOrigin(0.5, 1).setDepth(40).setVisible(false);
     this.state = new PlanningState(this.level, this.initialRoute);
     this.state.onChange((op) => {
       this.dirty = true;
@@ -106,6 +113,7 @@ export class PlanningScene extends Phaser.Scene {
       onUndo: () => this.state.undo(),
       onGo: () => this.go(),
       onBack: () => this.backToLevels(),
+      onHighlightWaypoint: (index) => this.highlightWaypoint(index),
       onShowTutorial:
         this.level.tutorial?.length
           ? () => this.scene.restart({ levelId: this.level.id, forceTutorial: true })
@@ -138,9 +146,7 @@ export class PlanningScene extends Phaser.Scene {
     this.hud.root.style.pointerEvents = 'none';
     let active = true;
     let motion: Phaser.Tweens.Tween | undefined;
-    const cursor = worldText(this, this.level.start.x, this.level.start.y, '👆', this.cam.zoom, 32, {
-      strokeThickness: 0,
-    }).setOrigin(0.25, 0.1).setDepth(50);
+    const cursor = this.createTutorialGlove(this.level.start);
     const finish = (): void => {
       if (!active) return;
       active = false;
@@ -258,6 +264,12 @@ export class PlanningScene extends Phaser.Scene {
     const hoveredPort = isOverSidebar(pointer) ? null : this.nearPort(world, this.level.start) ? 0 : this.nearPort(world, this.level.end) ? 1 : null;
     this.hazards.setPortFeedback(hoveredPort, this.state.stage === 'pickStart' && this.input.enabled);
     this.hazards.update(time);
+    const points = this.state.route.points;
+    const passesStart = points.slice(1, -1).some((p, i) =>
+      distToSegment(this.level.start, p, points[i + 2]) <= this.r(HIT_PX.port)
+    );
+    this.passingTip.setVisible(hoveredPort === 0 && passesStart && !this.drag)
+      .setPosition(this.level.start.x, this.level.start.y - this.r(24));
     if (this.drag?.pending) {
       this.state.moveWaypoint(this.drag.index, this.drag.pending);
       this.drag.pending = null;
@@ -268,6 +280,10 @@ export class PlanningScene extends Phaser.Scene {
   protected refresh(): void {
     this.dirty = false;
     this.validation = validateRoute(this.level, this.state.route, this.land);
+    const portBlocked = this.state.route.points.flatMap((p, i) =>
+      !this.state.isPort(i) && waypointInsidePort(p, this.level.start, this.r(HIT_PX.port)) ? [i] : []
+    );
+    this.validation.blockedPoints = [...new Set([...this.validation.blockedPoints, ...portBlocked])];
     this.estimate = simulateEstimate(this.level, this.state.route, this.land);
     // Evaluate the tutorial only on settled routes (not mid-drag).
     if (!this.drag) {
@@ -279,13 +295,40 @@ export class PlanningScene extends Phaser.Scene {
       }
       this.pendingOps = [];
     }
+    const route = this.state.route;
+    let ghost: { from: Vec; to: Vec } | undefined;
+    let arrivalLeg: number | null = this.drag
+      ? firstArrival(route, this.level.end, this.r(HIT_PX.port), this.state.stage === 'complete')
+      : null;
+    if (!this.drag && this.state.stage === 'drawing') {
+      const last = route.points[route.points.length - 1];
+      const pointer = this.input.activePointer;
+      const pointerWorld = this.worldPoint(pointer);
+      const defaultGhost = isOverSidebar(pointer) || dist(pointerWorld, last) < this.r(HIT_PX.port);
+      const to = defaultGhost ? this.level.end : pointerWorld;
+      ghost = { from: last, to };
+      if (!defaultGhost) {
+        const preview = { points: [...route.points, to], speeds: [...route.speeds, this.state.defaultSpeed] };
+        arrivalLeg = firstArrival(preview, this.level.end, this.r(HIT_PX.port), false);
+        if (arrivalLeg !== null) ghost = undefined;
+      }
+    }
     this.routeView.render({
       route: this.state.route,
       stage: this.state.stage,
       validation: this.validation,
       selectedLeg: this.state.selectedLeg,
       hoverPoint: this.hoverPoint,
+      ghost,
+      arrival: arrivalLeg === null ? undefined : { leg: arrivalLeg, end: this.level.end },
     });
+    const invalidWaypoint = this.validation.blockedPoints.find((i) => !this.state.isPort(i)) ?? null;
+    const reason = invalidWaypoint !== null
+      ? fill(portBlocked.includes(invalidWaypoint) ? t().hints.waypointInHarbour : t().hints.waypointOnLand, { n: invalidWaypoint })
+      : this.validation.blockedLegs.length > 0 ? t().hints.blocked
+      : this.state.stage === 'pickStart' ? t().hints.pickStart
+      : this.state.stage === 'drawing' ? t().hints.drawing
+      : null;
     this.hud.update({
       stage: this.state.stage,
       selectedLeg: this.state.selectedLeg,
@@ -293,8 +336,18 @@ export class PlanningScene extends Phaser.Scene {
       canUndo: this.state.canUndo,
       canGo: this.canGo(),
       blocked: this.validation.blockedLegs.length > 0 || this.validation.blockedPoints.length > 0,
+      reason,
+      invalidWaypoint,
       totals: this.estimate.totals,
     });
+  }
+
+  private highlightWaypoint(index: number): void {
+    const point = this.state.route.points[index];
+    if (!point) return;
+    const ring = this.add.circle(point.x, point.y, this.r(10), 0xff2a2a, 0)
+      .setStrokeStyle(this.r(3), 0xff2a2a).setDepth(45);
+    this.tweens.add({ targets: ring, scale: 2.5, alpha: 0, duration: 900, onComplete: () => ring.destroy() });
   }
 
   protected backToLevels(): void {
@@ -304,6 +357,7 @@ export class PlanningScene extends Phaser.Scene {
   protected canGo(): boolean {
     return (
       this.state.stage === 'complete' &&
+      !this.drag &&
       this.validation.blockedLegs.length === 0 &&
       this.validation.blockedPoints.length === 0 &&
       (!this.tutorial || this.tutorial.done)
@@ -314,6 +368,25 @@ export class PlanningScene extends Phaser.Scene {
 
   private r(px: number): number {
     return px / this.cam.zoom;
+  }
+
+  private createTutorialGlove(position: Vec): Phaser.GameObjects.Container {
+    const g = this.add.graphics();
+    g.fillStyle(0xffffff);
+    g.lineStyle(2.5, 0x0b1e33);
+    g.fillRoundedRect(-4, 1, 9, 25, 4);
+    g.strokeRoundedRect(-4, 1, 9, 25, 4);
+    g.fillRoundedRect(2, 15, 23, 18, 8);
+    g.strokeRoundedRect(2, 15, 23, 18, 8);
+    g.fillEllipse(-3, 24, 11, 9);
+    g.strokeEllipse(-3, 24, 11, 9);
+    g.fillStyle(0x3c7bad);
+    g.fillRoundedRect(4, 30, 20, 8, 3);
+    g.strokeRoundedRect(4, 30, 20, 8, 3);
+    g.lineBetween(9, 18, 9, 23);
+    g.lineBetween(15, 18, 15, 23);
+    g.lineBetween(21, 19, 21, 23);
+    return this.add.container(position.x, position.y, [g]).setScale(1 / this.cam.zoom).setDepth(50);
   }
 
   private hitWaypoint(w: Vec): number | null {
@@ -391,7 +464,10 @@ export class PlanningScene extends Phaser.Scene {
       if (this.nearPort(w, this.level.end)) s.clickEnd();
       else if (this.nearPort(w, this.level.start)) return;
       else if (!this.land.isLand(w)) {
-        if (this.allows('addWaypoint')) s.addWaypoint(w);
+        if (this.allows('addWaypoint') && s.addWaypoint(w)) {
+          const arrival = firstArrival(s.route, this.level.end, this.r(HIT_PX.port), false);
+          if (arrival !== null) s.finishAtLeg(arrival);
+        }
       }
       else this.onMissedClick('land');
       return;
@@ -430,6 +506,7 @@ export class PlanningScene extends Phaser.Scene {
       return;
     }
     if (isOverSidebar(pointer)) return;
+    if (this.state.stage === 'drawing') this.dirty = true;
     const hover = this.hitWaypoint(w);
     if (hover !== this.hoverPoint) {
       this.hoverPoint = hover;
@@ -450,16 +527,24 @@ export class PlanningScene extends Phaser.Scene {
     if (drag.pending) this.state.moveWaypoint(drag.index, drag.pending);
     const final = this.state.route.points[drag.index];
     const onLand = final ? this.land.isLand(final) : false;
+    const inDeparture = final ? waypointInsidePort(final, this.level.start, this.r(HIT_PX.port)) : false;
     if (drag.inserted) {
-      if (onLand) this.state.undo();
+      if (onLand || inDeparture) this.state.undo();
+      else {
+        const arrival = firstArrival(this.state.route, this.level.end, this.r(HIT_PX.port), this.state.stage === 'complete');
+        if (arrival !== null) this.state.finishAtLeg(arrival);
+      }
       return;
     }
-    if (!drag.moved || onLand) {
+    if (!drag.moved || onLand || inDeparture) {
       this.state.cancelMove();
       if (!drag.moved && pointer.leftButtonReleased()) {
         this.state.selectLeg(drag.index - 1);
         this.state.cycleLegSpeed(drag.index - 1);
       }
+    } else {
+      const arrival = firstArrival(this.state.route, this.level.end, this.r(HIT_PX.port), this.state.stage === 'complete');
+      if (arrival !== null) this.state.finishAtLeg(arrival);
     }
   }
 }

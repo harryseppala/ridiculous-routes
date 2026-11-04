@@ -3,6 +3,7 @@ import { lerp } from '../game/geometry';
 import { getLevel } from '../game/levels';
 import type { LevelDef } from '../game/levels/types';
 import { progress } from '../game/progress';
+import { sailingAnimationTimes } from '../game/sailingAnimation';
 import type { Route, VoyageResult, VoyageTotals } from '../game/types';
 import { mountForScene } from '../ui/hud/hudLayer';
 import { createSailingHud, type SailingHud } from '../ui/hud/sailingHud';
@@ -31,8 +32,8 @@ export class SailingScene extends Phaser.Scene {
   private hazards!: HazardView;
   private ship!: Phaser.GameObjects.Image;
   private hud!: SailingHud;
-  private progress = 0;
-  private durationMs = 0;
+  private elapsedMs = 0;
+  private animationTimes: number[] = [];
   private speedMul = 1;
   private finished = false;
 
@@ -43,14 +44,14 @@ export class SailingScene extends Phaser.Scene {
   init(data: SailingSceneData): void {
     this.data_ = data;
     this.level = getLevel(data.levelId);
-    this.progress = 0;
+    this.elapsedMs = 0;
     this.speedMul = 1;
     this.finished = false;
-    this.durationMs = Math.max(1, data.result.totals.hours * MS_PER_HOUR);
+    this.animationTimes = sailingAnimationTimes(data.result.samples, data.route, MS_PER_HOUR);
   }
 
   create(): void {
-    addWorldMap(this);
+    addWorldMap(this, this.level.viewport);
     const cam = setupMapCamera(this, this.level.viewport);
     this.hazards = new HazardView(this, this.level, cam.zoom);
     const routeView = new RouteView(this, cam.zoom);
@@ -79,17 +80,19 @@ export class SailingScene extends Phaser.Scene {
   update(time: number, delta: number): void {
     if (this.finished) return;
     const samples = this.data_.result.samples;
-    this.progress = Math.min(1, this.progress + (delta * this.speedMul) / this.durationMs);
     if (samples.length < 2) {
       this.finish();
       return;
     }
-    const hours = this.progress * this.data_.result.totals.hours;
+    const duration = this.animationTimes[this.animationTimes.length - 1];
+    this.elapsedMs = Math.min(duration, this.elapsedMs + delta * this.speedMul);
     let i = 0;
-    while (i < samples.length - 2 && samples[i + 1].hours < hours) i++;
+    while (i < samples.length - 2 && this.animationTimes[i + 1] < this.elapsedMs) i++;
     const a = samples[i];
     const b = samples[i + 1];
-    const k = b.hours === a.hours ? 1 : (hours - a.hours) / (b.hours - a.hours);
+    const segmentDuration = this.animationTimes[i + 1] - this.animationTimes[i];
+    const k = segmentDuration === 0 ? 1 : (this.elapsedMs - this.animationTimes[i]) / segmentDuration;
+    const hours = a.hours + (b.hours - a.hours) * k;
     this.hazards.update(time, hours);
     const pos = lerp(a.pos, b.pos, k);
     this.ship.setPosition(pos.x, pos.y);
@@ -103,7 +106,7 @@ export class SailingScene extends Phaser.Scene {
       co2T: a.co2T + (b.co2T - a.co2T) * k,
     };
     this.hud.update(totals);
-    if (this.progress >= 1) this.finish();
+    if (this.elapsedMs >= duration) this.finish();
   }
 
   private finish(): void {

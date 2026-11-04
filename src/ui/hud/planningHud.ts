@@ -9,6 +9,7 @@ export interface PlanningHudCallbacks {
   onUndo(): void;
   onGo(): void;
   onBack(): void;
+  onHighlightWaypoint(index: number): void;
   onShowTutorial?: () => void;
 }
 
@@ -19,6 +20,8 @@ export interface PlanningHudState {
   canUndo: boolean;
   canGo: boolean;
   blocked: boolean;
+  reason: string | null;
+  invalidWaypoint: number | null;
   totals: VoyageTotals;
 }
 
@@ -63,7 +66,12 @@ export function createPlanningHud(level: LevelDef, cb: PlanningHudCallbacks): Pl
   go.addEventListener('click', () => cb.onGo());
   actions.append(undo, go);
 
-  root.append(header, metersBox, actions);
+  const reason = el('button', 'hud-link hud-reason');
+  reason.type = 'button';
+  reason.addEventListener('click', () => {
+    if (last?.invalidWaypoint !== null && last?.invalidWaypoint !== undefined) cb.onHighlightWaypoint(last.invalidWaypoint);
+  });
+  root.append(header, metersBox, reason, actions);
 
   let last: PlanningHudState | null = null;
   let goAllowed = true;
@@ -75,6 +83,9 @@ export function createPlanningHud(level: LevelDef, cb: PlanningHudCallbacks): Pl
 
     undo.disabled = !st.canUndo;
     go.disabled = !(st.canGo && goAllowed);
+    reason.hidden = !st.reason;
+    reason.textContent = st.reason ?? '';
+    reason.disabled = st.invalidWaypoint === null;
   }
 
   return {

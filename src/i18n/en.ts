@@ -67,6 +67,13 @@ export const en = {
     current: 'Ocean current',
     blocked: 'Crosses land',
   },
+  weather: {
+    builds: 'Wind builds',
+    fades: 'Storm fades',
+    hours: '{h}H',
+    days: '{d}D',
+    daysHours: '{d}D {h}H',
+  },
   units: {
     costK: '€ {v}k',
     costOf: '€ {v}k / {max}k',
@@ -78,9 +85,13 @@ export const en = {
   },
   hints: {
     pickStart: 'Click the departure port.',
-    drawing: 'Click the sea to add waypoints, then click the arrival port.',
-    complete: 'Drag points to adjust. Click a leg to add a point. Right-click a point to delete it.',
+    drawing: 'Click the ghost line or sea to add waypoints. Click or drag a point to the arrival port.',
+    complete: 'Drag points to adjust or connect to the arrival port. Click a leg to add a point; right-click to delete.',
     blocked: 'Your route crosses land. Move it onto open water.',
+    waypointInHarbour: 'Waypoint {n} is inside the departure port harbour.',
+    waypointOnLand: 'Waypoint {n} is on land.',
+    willArrive: 'Route will end at the port',
+    passingPort: 'Passing by. Drop a point on the port to arrive.',
   },
   results: {
     title: 'Arrived!',

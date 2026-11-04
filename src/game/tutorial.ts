@@ -21,6 +21,7 @@ const ROUTE_EDITS: ReadonlySet<PlanningOp> = new Set([
   'clickEnd',
   'insertWaypoint',
   'move',
+  'arrive',
   'cancelMove',
   'delete',
   'undo',

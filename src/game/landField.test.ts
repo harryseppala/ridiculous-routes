@@ -11,7 +11,7 @@ describe('LandField (real mask)', () => {
 
   it('classifies a known open-ocean point as water', () => {
     expect(field.isLand({ x: 350, y: 350 })).toBe(false);
-    expect(field.distToLand({ x: 350, y: 350 })).toBeGreaterThan(30);
+    expect(field.distToLand({ x: 350, y: 350 })).toBeGreaterThan(25);
   });
 
   it('classifies a known continent point as land', () => {

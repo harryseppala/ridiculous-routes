@@ -9,9 +9,6 @@ import { attachDebugOverlay } from './debugOverlay';
 import { addWorldMap, MAP_TEXTURE_KEY } from './mapView';
 import { SCENE_KEYS } from './sceneKeys';
 
-/** Header strip height in game px; the world map is fitted below it. */
-const HEADER_PX = 110;
-
 export class LevelSelectScene extends Phaser.Scene {
   constructor() {
     super({ key: SCENE_KEYS.LEVEL_SELECT });
@@ -22,10 +19,10 @@ export class LevelSelectScene extends Phaser.Scene {
     this.extendOcean();
     const cam = this.cameras.main;
     cam.setBackgroundColor(PALETTE.ocean);
-    // Fit the whole world below the header; side margins are ocean.
+    // Fit the whole world; side margins are ocean.
     const { width, height } = this.scale;
-    const zoom = Math.min(width / WORLD.width, (height - HEADER_PX) / WORLD.height);
-    const center = { x: WORLD.width / 2, y: (height / 2 - HEADER_PX) / zoom };
+    const zoom = Math.min(width / WORLD.width, height / WORLD.height);
+    const center = { x: WORLD.width / 2, y: WORLD.height / 2 };
     cam.setZoom(zoom);
     cam.centerOn(center.x, center.y);
     const toScreen = (p: { x: number; y: number }) => ({

@@ -7,6 +7,7 @@ import {
   LAND_FIELD_REGISTRY_KEY,
   LAND_MASK_KEY,
   MAP_TEXTURE_KEY,
+  MAP_SVG_KEY,
 } from './mapView';
 import { SCENE_KEYS } from './sceneKeys';
 
@@ -21,6 +22,7 @@ export class BootScene extends Phaser.Scene {
       width: MAP_TEXTURE_SIZE.width,
       height: MAP_TEXTURE_SIZE.height,
     });
+    this.load.text(MAP_SVG_KEY, `${import.meta.env.BASE_URL}assets/images/map3.svg`);
     this.load.image(LAND_MASK_KEY, `${import.meta.env.BASE_URL}assets/images/land-mask.png`);
   }
 

@@ -4,6 +4,7 @@ import { dot, normalize, pointInPolygon, polygonBounds, polygonCentroid } from '
 import type { CurrentZone, LevelDef, WindZone } from '../game/levels/types';
 import type { Vec } from '../game/types';
 import { t } from '../i18n';
+import { formatWeatherDuration } from '../i18n/format';
 import { PALETTE } from '../ui/palette';
 import { worldText } from './worldText';
 
@@ -38,8 +39,8 @@ export class HazardView {
       this.drawWindZone(wind, arrows, zone);
       if (zone.weather) {
         const center = polygonCentroid(zone.polygon);
-        const text = zone.weather.toIntensity > zone.weather.fromIntensity ? 'Wind builds' : 'Storm fades';
-        this.track(worldText(scene, center.x, center.y, `${text} · ${zone.weather.toHour}h`, zoom, 11, { fontStyle: 'bold' })
+        const text = zone.weather.toIntensity > zone.weather.fromIntensity ? t().weather.builds : t().weather.fades;
+        this.track(worldText(scene, center.x, center.y, `${text} · ${formatWeatherDuration(zone.weather.toHour)}`, zoom, 11, { fontStyle: 'bold' })
           .setOrigin(0.5).setDepth(DEPTH.arrows + 1));
       }
     }
@@ -117,19 +118,25 @@ export class HazardView {
   private drawPort(p: Vec, name: string): void {
     const px = this.px;
     const g = this.scene.add.graphics();
-    g.fillStyle(PALETTE.port, 1);
-    g.lineStyle(2 * px, PALETTE.portStroke, 1);
-    g.fillCircle(0, 0, 11 * px);
-    g.strokeCircle(0, 0, 11 * px);
-    // Simple anchor glyph.
-    g.lineStyle(1.8 * px, PALETTE.portStroke, 1);
-    g.strokeCircle(0, -5 * px, 1.5 * px);
-    g.lineBetween(0, -3.5 * px, 0, 6 * px);
-    g.lineBetween(-3.5 * px, -1 * px, 3.5 * px, -1 * px);
+    g.fillStyle(0x06243a, 0.9);
+    g.fillCircle(1 * px, 2 * px, 14 * px);
+    g.fillStyle(0xffffff);
+    g.fillCircle(0, 0, 14 * px);
+    g.lineStyle(2 * px, 0x174b70);
+    g.strokeCircle(0, 0, 13 * px);
+    g.fillStyle(0x2778a3);
+    g.fillCircle(0, 0, 10.5 * px);
+    g.lineStyle(2 * px, 0xffffff);
+    g.strokeCircle(0, -5.2 * px, 2 * px);
+    g.lineBetween(0, -3.2 * px, 0, 6 * px);
+    g.lineBetween(-4 * px, -1.5 * px, 4 * px, -1.5 * px);
     g.beginPath();
-    g.arc(0, 1 * px, 5 * px, Phaser.Math.DegToRad(20), Phaser.Math.DegToRad(160));
+    g.arc(0, 0.5 * px, 6 * px, Phaser.Math.DegToRad(20), Phaser.Math.DegToRad(160));
     g.strokePath();
-    const label = worldText(this.scene, 0, 14 * px, name, this.zoom, 13, {
+    g.fillStyle(0xffffff);
+    g.fillTriangle(-7 * px, 1 * px, -6 * px, 5 * px, -3 * px, 3 * px);
+    g.fillTriangle(7 * px, 1 * px, 6 * px, 5 * px, 3 * px, 3 * px);
+    const label = worldText(this.scene, 0, 16 * px, name, this.zoom, 13, {
       fontStyle: 'bold', resolution: Math.max(2, (window.devicePixelRatio || 1) * 2),
     }).setOrigin(0.5, 0);
     const port = this.track(this.scene.add.container(p.x, p.y, [g, label]).setDepth(DEPTH.ports));
@@ -145,9 +152,11 @@ export class HazardView {
   update(time: number, hours = 0): void {
     const px = this.px;
     this.ports.forEach((port, index) => {
-      port.setScale(Phaser.Math.Linear(port.scaleX, index === this.hoveredPort ? 1.22 : 1, 0.18));
+      const attention = index === 0 && this.departurePending;
+      const target = index === this.hoveredPort ? 1.25 : attention ? 1.12 + 0.1 * Math.sin(time / 160) : 1;
+      port.setScale(Phaser.Math.Linear(port.scaleX, target, 0.22));
       port.x = (index === 0 ? this.level.start.x : this.level.end.x) +
-        (index === 0 && this.departurePending ? Math.sin(time / 75) * 1.2 * px : 0);
+        (attention ? Math.sin(time / 55) * 4 * px : 0);
     });
     for (const { zone, graphics } of this.weatherGraphics) {
       for (const graphic of graphics) graphic.setAlpha(windIntensity(zone, hours));

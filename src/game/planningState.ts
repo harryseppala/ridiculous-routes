@@ -10,6 +10,7 @@ export type PlanningOp =
   | 'insertWaypoint'
   | 'beginMove'
   | 'move'
+  | 'arrive'
   | 'cancelMove'
   | 'delete'
   | 'speed'
@@ -140,6 +141,17 @@ export class PlanningState {
     if (i <= 0 || i >= this.route.points.length || this.isPort(i)) return;
     this.route.points[i] = { ...p };
     this.emit('move');
+  }
+
+  /** Finish an already-snapshotted edit at the given leg, discarding later points. */
+  finishAtLeg(legIndex: number): boolean {
+    if (legIndex < 0 || legIndex >= this.legCount) return false;
+    this.route.points = [...this.route.points.slice(0, legIndex + 1), { ...this.end }];
+    this.route.speeds = this.route.speeds.slice(0, legIndex + 1);
+    this.stage = 'complete';
+    this.selectedLeg = null;
+    this.emit('arrive');
+    return true;
   }
 
   /** Restore the pre-drag snapshot (e.g. released on land). */

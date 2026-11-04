@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fill, formatCo2, formatCost, formatCostOf, formatDuration, formatOf } from './format';
+import { fill, formatCo2, formatCost, formatCostOf, formatDuration, formatOf, formatWeatherDuration } from './format';
 
 describe('formatters', () => {
   it('formatCost rounds to k€', () => {
@@ -14,6 +14,12 @@ describe('formatters', () => {
     expect(formatDuration(24)).toBe('1 d');
     expect(formatDuration(124.4)).toBe('5 d 4 h');
     expect(formatDuration(167.6)).toBe('7 d');
+  });
+
+  it('formats weather times in compact days and hours', () => {
+    expect(formatWeatherDuration(60)).toBe('2D 12H');
+    expect(formatWeatherDuration(48)).toBe('2D');
+    expect(formatWeatherDuration(5)).toBe('5H');
   });
 
   it('formatCo2 rounds to tonnes', () => {

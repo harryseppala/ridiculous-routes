@@ -16,7 +16,7 @@ export class ResultsScene extends Phaser.Scene {
     const nextId = level.id + 1;
     const canNext = hasLevel(nextId) && progress.isUnlocked(nextId);
     const view = createResultsView(level, data.result, data.improved, {
-      onRetry: () => this.goTo(SCENE_KEYS.PLANNING, { levelId: level.id, route: data.route }),
+      onRetry: () => this.goTo(SCENE_KEYS.PLANNING, { levelId: level.id }),
       onLevels: () => this.goTo(SCENE_KEYS.LEVEL_SELECT, {}),
       onNext: canNext ? () => this.goTo(SCENE_KEYS.PLANNING, { levelId: nextId, showIntro: true }) : undefined,
     });

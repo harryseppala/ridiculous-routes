@@ -1,6 +1,8 @@
 import type { Stars } from './types';
 
-export const PROGRESS_STORAGE_KEY = 'ridiculous-routes:progress:v1';
+export const PROGRESS_STORAGE_KEY = 'ridiculous-routes:progress:v2';
+const LEGACY_STORAGE_KEY = 'ridiculous-routes:progress:v1';
+const LEGACY_LEVEL_IDS: Readonly<Record<number, number>> = { 1: 1, 5: 2, 3: 3, 4: 4, 6: 5, 7: 6 };
 
 export interface ProgressData {
   stars: Record<number, Stars>;
@@ -23,7 +25,8 @@ export class ProgressStore {
 
   load(): ProgressData {
     try {
-      const raw = this.storage?.getItem(PROGRESS_STORAGE_KEY);
+      const current = this.storage?.getItem(PROGRESS_STORAGE_KEY);
+      const raw = current ?? this.storage?.getItem(LEGACY_STORAGE_KEY);
       if (!raw) return defaults();
       const parsed: unknown = JSON.parse(raw);
       if (!parsed || typeof parsed !== 'object') return defaults();
@@ -31,7 +34,8 @@ export class ProgressStore {
       const stars: Record<number, Stars> = {};
       if (obj.stars && typeof obj.stars === 'object') {
         for (const [k, v] of Object.entries(obj.stars)) {
-          const id = Number(k);
+          const oldId = Number(k);
+          const id = current === null || current === undefined ? LEGACY_LEVEL_IDS[oldId] : oldId;
           if (Number.isInteger(id) && isStars(v)) stars[id] = v;
         }
       }

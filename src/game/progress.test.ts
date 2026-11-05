@@ -52,6 +52,28 @@ describe('ProgressStore', () => {
     expect(new ProgressStore(s).isTutorialDone()).toBe(true);
   });
 
+  it('migrates stars with their levels rather than their old positions', () => {
+    const storage = memoryStorage();
+    storage.setItem('ridiculous-routes:progress:v1', JSON.stringify({
+      stars: { 1: 3, 2: 2, 3: 1, 4: 2, 5: 1, 6: 2, 7: 3 },
+      tutorialDone: true,
+    }));
+    const p = new ProgressStore(storage);
+    expect(p.load()).toEqual({ stars: { 1: 3, 2: 1, 3: 1, 4: 2, 5: 2, 6: 3 }, tutorialDone: true });
+    expect(p.recordResult(2, 3)).toBe(true);
+    expect(new ProgressStore(storage).getStars(2)).toBe(3);
+    expect(storage.getItem(PROGRESS_STORAGE_KEY)).not.toBeNull();
+  });
+
+  it('does not give the removed level’s stars to its replacement', () => {
+    const storage = memoryStorage();
+    storage.setItem('ridiculous-routes:progress:v1', JSON.stringify({ stars: { 1: 3, 2: 3 } }));
+    const p = new ProgressStore(storage);
+    expect(p.getStars(2)).toBe(0);
+    expect(p.isUnlocked(2)).toBe(true);
+    expect(p.isUnlocked(3)).toBe(false);
+  });
+
   it('works without storage', () => {
     const p = new ProgressStore(undefined);
     p.recordResult(1, 3);

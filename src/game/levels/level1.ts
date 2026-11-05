@@ -1,10 +1,6 @@
-import { roundPolygonCorners } from '../geometry';
 import type { LevelDef } from './types';
 
-/**
- * Tutorial: an island between the ports, a windy strait to the north and a
- * regulated area (ECA) over the deep southern passage.
- */
+/** A calm first voyage: learn to steer around an island and change speed. */
 export const level1: LevelDef = {
   id: 1,
   textKey: 'l1',
@@ -15,29 +11,10 @@ export const level1: LevelDef = {
   deadlineH: 264,
   costTargetK: 340,
   co2TargetT: 800,
-  windZones: [
-    {
-      polygon: roundPolygonCorners([
-        { x: 246, y: 326 },
-        { x: 318, y: 326 },
-        { x: 318, y: 370 },
-        { x: 246, y: 370 },
-      ]),
-      dir: { x: 0, y: 1 },
-      knots: 25,
-      strength: 'strong',
-    },
-  ],
-  ecas: [
-    [
-      { x: 262, y: 424 },
-      { x: 340, y: 424 },
-      { x: 340, y: 440 },
-      { x: 262, y: 440 },
-    ],
-  ],
+  windZones: [],
+  ecas: [],
   currents: [],
-  tutorial: ['straightRoute', 'waypoints', 'wind', 'eca', 'speed'],
+  tutorial: ['straightRoute', 'waypoints', 'speed'],
   referenceRoute: {
     points: [
       { x: 238, y: 388 },
@@ -49,14 +26,13 @@ export const level1: LevelDef = {
   },
   badRoutes: [
     {
-      // Hugging the islet in the strong wind: wrecked on the coast.
       points: [
         { x: 238, y: 388 },
         { x: 262, y: 336 },
         { x: 306, y: 336 },
         { x: 322, y: 372 },
       ],
-      speeds: ['normal', 'normal', 'normal'],
+      speeds: ['fast', 'fast', 'fast'],
     },
   ],
 };

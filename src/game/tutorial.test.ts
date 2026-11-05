@@ -26,12 +26,11 @@ const route = (...pts: [number, number][]): Route => ({
 });
 
 const straight = route();
-const north = route([262, 336], [306, 336]);
 const south = route([268, 416], [305, 416]);
 const deep = route([247, 400], [312, 436]);
 
 describe('TutorialController', () => {
-  it('walks all five steps in order', () => {
+  it('walks the three simple first-voyage steps in order', () => {
     const t = new TutorialController(level1.tutorial!);
     t.start(ctx({ points: [], speeds: [] }, 'pickStart'));
     expect(t.current).toBe('straightRoute');
@@ -43,18 +42,7 @@ describe('TutorialController', () => {
     expect(t.canContinue).toBe(false);
     expect(t.allows('insertWaypoint')).toBe(true);
 
-    // Steering north around the island still avoids land: waypoint step done.
-    expect(t.handle('insertWaypoint', ctx(north))).toBe(true);
-    expect(t.current).toBe('wind');
-    expect(t.canContinue).toBe(false);
-
-    // Moving south clears the strong-wind coast.
-    expect(t.handle('move', ctx(south))).toBe(true);
-    expect(t.current).toBe('eca');
-
-    // A speed change alone does not satisfy the ECA step; entering the ECA does.
-    expect(t.handle('speed', ctx(south))).toBe(false);
-    expect(t.handle('move', ctx(deep))).toBe(true);
+    expect(t.handle('insertWaypoint', ctx(south))).toBe(true);
     expect(t.current).toBe('speed');
 
     expect(t.handle('move', ctx(deep))).toBe(false);
@@ -84,7 +72,7 @@ describe('TutorialController', () => {
 
   it('ECA step completes when leaving the ECA too', () => {
     const t = new TutorialController(['eca']);
-    t.start(ctx(deep));
+    t.start({ ...ctx(deep), inEca: true });
     expect(t.handle('move', ctx(south))).toBe(true);
   });
 
@@ -96,9 +84,9 @@ describe('TutorialController', () => {
 
   it('level 1 fixtures behave as the tutorial expects', () => {
     expect(validateRoute(level1, straight, land).blockedLegs.length).toBeGreaterThan(0);
-    expect(ctx(north).coastalWindFail).toBe(true);
     expect(ctx(south).inEca).toBe(false);
-    expect(ctx(deep).inEca).toBe(true);
+    expect(ctx(deep).inEca).toBe(false);
+    expect(ctx(south).coastalWindFail).toBe(false);
     expect(ctx(south).validation.blockedLegs).toEqual([]);
     expect(ctx(deep).validation.blockedLegs).toEqual([]);
   });

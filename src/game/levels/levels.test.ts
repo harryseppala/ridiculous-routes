@@ -68,8 +68,8 @@ describe.each(LEVELS.map((l) => [l.id, l] as const))('level %i', (_id, level) =>
 });
 
 describe('levels', () => {
-  it('requires mixed speeds rather than a single straight leg in level 5', () => {
-    const level = LEVELS[4];
+  it('requires mixed speeds rather than a single straight leg in the new level 2', () => {
+    const level = LEVELS[1];
     for (const speed of ['slow', 'normal', 'fast'] as const) {
       const straight = { points: [level.start, level.end], speeds: [speed] };
       expect(simulate(level, straight, land).failure).toBeDefined();
@@ -86,5 +86,15 @@ describe('levels', () => {
 
   it('have sequential ids starting at 1', () => {
     expect(LEVELS.map((l) => l.id)).toEqual(LEVELS.map((_, i) => i + 1));
+  });
+
+  it('removes the old second level and moves the remaining levels into order', () => {
+    expect(LEVELS.map((l) => l.textKey)).toEqual(['l1', 'l5', 'l3', 'l4', 'l6', 'l7']);
+  });
+
+  it('keeps the first voyage free of wind and regulated areas', () => {
+    expect(LEVELS[0].windZones).toEqual([]);
+    expect(LEVELS[0].ecas).toEqual([]);
+    expect(LEVELS[0].tutorial).toEqual(['straightRoute', 'waypoints', 'speed']);
   });
 });

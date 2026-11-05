@@ -12,7 +12,7 @@ export class GameOverScene extends Phaser.Scene {
   create(data: VoyageEndData): void {
     const reason = data.result.failure?.reason ?? 'land';
     const view = createGameOverView(reason, {
-      onRetry: () => this.goTo(SCENE_KEYS.PLANNING, { levelId: data.levelId, route: data.route }),
+      onRetry: () => this.goTo(SCENE_KEYS.PLANNING, { levelId: data.levelId }),
       onLevels: () => this.goTo(SCENE_KEYS.LEVEL_SELECT, {}),
     });
     mountForScene(this, view);

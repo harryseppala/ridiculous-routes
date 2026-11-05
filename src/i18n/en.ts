@@ -17,10 +17,10 @@ export const en = {
     skipDemo: 'Skip demonstration',
     showTutorial: 'Show tutorial',
     straightRoute: 'Click the departure port, then the arrival port.',
-    waypoints: 'Click a leg to add a waypoint and steer around the island.',
+    waypoints: 'Drag the route around land.',
     wind: 'Strong winds near land are dangerous. Keep clear of the windy strait.',
     eca: 'The striped area needs cleaner fuel: more cost, fewer emissions. Drag your route in or out of it.',
-    speed: 'Click a waypoint or speed label to cycle through normal, fast and slow.',
+    speed: 'Click a speed label to change speed.',
     ready: 'Your turn: plan a route and press Go.',
   },
   intro: {
@@ -43,6 +43,14 @@ export const en = {
     retry: 'Retry',
     levels: 'Levels',
     next: 'Next level',
+  },
+  routes: {
+    heading: 'Routes',
+    add: '+ Add route',
+    name: 'Route {n}',
+    delete: 'Delete Route {n}',
+    keepOne: 'Keep at least one route.',
+    limit: 'Maximum of {n} routes reached.',
   },
   hud: {
     levelLabel: 'Level {n}',
@@ -126,7 +134,7 @@ export const en = {
   levels: {
     l1: {
       title: 'First Voyage',
-      newElement: 'Tutorial: routes, wind, regulated areas, speed',
+      newElement: 'Tutorial: routes and speed',
       intro: 'Your first job: get the ship from port to port. The cards will show you how.',
       startName: 'Harbourtown',
       endName: 'Cape Haven',

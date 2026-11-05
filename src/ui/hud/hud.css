@@ -355,6 +355,53 @@
   color: #ffffff;
 }
 
+.hud-routes,
+.hud-route-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.hud-route-row {
+  display: flex;
+  gap: 6px;
+}
+
+.hud-add-route,
+.hud-route-select {
+  padding: 6px 10px;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.hud-route-select[aria-pressed='true'] {
+  background: #f36c21;
+  border-color: #f36c21;
+  color: #ffffff;
+}
+
+.hud-route-delete {
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  padding: 5px 8px;
+}
+
+.hud-route-delete:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.hud-route-delete svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 /* ---------- Overlays (results / game over) ---------- */
 
 .overlay {
@@ -662,9 +709,9 @@
 
 .tutorial-card {
   position: absolute;
-  left: 20px;
-  bottom: 20px;
-  width: 380px;
+  left: 300px;
+  top: 40px;
+  width: 360px;
   padding: 14px 16px;
   border-radius: 12px;
   background: rgb(3 24 40 / 94%);
@@ -688,6 +735,7 @@
 .tutorial-text {
   font-size: 16px;
   line-height: 1.4;
+  margin: 8px 0;
 }
 
 .tutorial-continue {

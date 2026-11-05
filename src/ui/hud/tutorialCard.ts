@@ -11,7 +11,7 @@ export interface TutorialCard {
   destroy(): void;
 }
 
-/** One short card per tutorial step, anchored over the bottom-left of the map. */
+/** Short instructions above the demonstration, centred within the map. */
 export function createTutorialCard(onContinue: () => void): TutorialCard {
   const s = t().tutorial;
   const root = el('div', 'tutorial-card');

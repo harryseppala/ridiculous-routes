@@ -2,6 +2,18 @@
 
 > Full plan: `context/changes/core-gameplay/plan.md`
 
+## Gameplay revision (November 2026)
+
+The original plan below is historical. The gameplay feedback document supersedes it:
+
+- Level 1 has no wind or regulated area. Its three-topic demonstration uses shorter text, slower movement and a cartoon glove, with instructions centred above the map.
+- Route segments can be split and waypoints dragged on land. Invalid routes remain red and cannot sail.
+- Fast-forward cycles through 1x, 2x and 4x playback, then back to 1x.
+- There are six levels: First Voyage, Against the Clock, Wind & Storms, Regulated Waters, Ride the Current and The Grand Passage. Legacy saved stars follow the corresponding level content.
+- Each attempt starts with one blank route. Up to five routes can be drawn and compared by selecting them; only the selected route and its estimates are visible. Undo retains its existing behaviour independently for each route.
+- Compact route controls sit beneath Undo/Go. Selected routes are orange, others blue. Deletion renumbers routes and selects the previous route if necessary; the last route cannot be deleted. At five routes, Add Route is disabled with an explanation.
+- Go sails only the selected valid route. Results show only that voyage. Retry or re-entering the level clears all routes without confirmation.
+
 ## What & Why
 
 Build the actual Ridiculous Routes game: players plan a ship route with waypoints and per-leg speeds, watch it sail, and get stars or a game-over reason. The goal is for new employees with no shipping background to learn, by playing, that good routing balances cost, time, safety and emissions.

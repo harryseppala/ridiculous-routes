@@ -6,9 +6,10 @@ import { getLevel } from '../game/levels';
 import type { LevelDef } from '../game/levels/types';
 import { PlanningState, type PlanningOp } from '../game/planningState';
 import { progress } from '../game/progress';
+import { RoutePlans } from '../game/routePlans';
 import { routeTouchesEca, TutorialController, type TutorialContext } from '../game/tutorial';
 import { simulate, simulateEstimate, validateRoute, type RouteValidation } from '../game/simulate';
-import type { Route, Vec, VoyageResult } from '../game/types';
+import type { Vec, VoyageResult } from '../game/types';
 import { t } from '../i18n';
 import { fill } from '../i18n/format';
 import { mountForScene } from '../ui/hud/hudLayer';
@@ -24,8 +25,6 @@ import { worldText } from './worldText';
 
 export interface PlanningSceneData {
   levelId?: number;
-  /** Route to restore (Retry). */
-  route?: Route;
   /** Show the level intro card first (entering from level select, not Retry). */
   showIntro?: boolean;
   /** Replay the tutorial even if it was completed before. */
@@ -50,7 +49,8 @@ export class PlanningScene extends Phaser.Scene {
   protected state!: PlanningState;
   protected validation: RouteValidation = { blockedLegs: [], blockedPoints: [] };
   protected estimate!: VoyageResult;
-  private initialRoute?: Route;
+  private plans!: RoutePlans;
+  private unlistenState?: () => void;
   protected showIntro = false;
   private hazards!: HazardView;
   private routeView!: RouteView;
@@ -72,9 +72,8 @@ export class PlanningScene extends Phaser.Scene {
 
   init(data: PlanningSceneData): void {
     this.level = getLevel(data.levelId ?? 1);
-    this.initialRoute = data.route;
-    this.showIntro = data.showIntro === true && !data.route;
-    const wantsTutorial = !!this.level.tutorial?.length && !data.route && (data.forceTutorial === true || !progress.isTutorialDone());
+    this.showIntro = data.showIntro === true;
+    const wantsTutorial = !!this.level.tutorial?.length && (data.forceTutorial === true || !progress.isTutorialDone());
     this.tutorial = wantsTutorial ? new TutorialController(this.level.tutorial!) : undefined;
     this.tutorialCard = undefined;
     this.tutorialStarted = false;
@@ -93,11 +92,9 @@ export class PlanningScene extends Phaser.Scene {
     this.passingTip = worldText(this, 0, 0, t().hints.passingPort, this.cam.zoom, 11, {
       backgroundColor: '#0b1e33', padding: { x: 5, y: 3 },
     }).setOrigin(0.5, 1).setDepth(40).setVisible(false);
-    this.state = new PlanningState(this.level, this.initialRoute);
-    this.state.onChange((op) => {
-      this.dirty = true;
-      this.pendingOps.push(op);
-    });
+    this.plans = new RoutePlans(this.level);
+    this.activateRoute();
+    this.events.once('shutdown', () => this.unlistenState?.());
 
     this.input.mouse?.disableContextMenu();
     this.input.on('pointerdown', this.onPointerDown, this);
@@ -105,7 +102,7 @@ export class PlanningScene extends Phaser.Scene {
     this.input.on('pointerup', this.onPointerUp, this);
     this.input.on('pointerupoutside', this.onPointerUp, this);
     this.input.keyboard?.on('keydown-Z', (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey) this.state.undo();
+      if (this.input.enabled && (e.ctrlKey || e.metaKey)) this.state.undo();
     });
     this.input.keyboard?.on('keydown-ESC', () => this.backToLevels());
 
@@ -114,6 +111,9 @@ export class PlanningScene extends Phaser.Scene {
       onGo: () => this.go(),
       onBack: () => this.backToLevels(),
       onHighlightWaypoint: (index) => this.highlightWaypoint(index),
+      onAddRoute: () => this.changeRoute(() => this.plans.add()),
+      onSelectRoute: (index) => this.changeRoute(() => this.plans.select(index)),
+      onDeleteRoute: (index) => this.changeRoute(() => this.plans.delete(index)),
       onShowTutorial:
         this.level.tutorial?.length
           ? () => this.scene.restart({ levelId: this.level.id, forceTutorial: true })
@@ -139,6 +139,24 @@ export class PlanningScene extends Phaser.Scene {
     }
   }
 
+  private activateRoute(): void {
+    this.unlistenState?.();
+    this.state = this.plans.selected;
+    this.pendingOps = [];
+    this.hoverPoint = null;
+    this.unlistenState = this.state.onChange((op) => {
+      this.dirty = true;
+      this.pendingOps.push(op);
+    });
+    this.dirty = true;
+  }
+
+  private changeRoute(change: () => boolean): void {
+    if (!this.input.enabled || this.drag || !change()) return;
+    this.activateRoute();
+    this.refresh();
+  }
+
   /** Called once planning becomes interactive. */
   protected onIntroDismissed(): void {
     if (!this.tutorial) return;
@@ -159,7 +177,7 @@ export class PlanningScene extends Phaser.Scene {
       this.input.enabled = true;
       this.hud.root.style.pointerEvents = '';
       this.tutorialCard?.showReady();
-      this.time.delayedCall(4000, () => {
+      this.time.delayedCall(6000, () => {
         this.tutorialCard?.destroy();
         this.tutorialCard = undefined;
       });
@@ -172,16 +190,14 @@ export class PlanningScene extends Phaser.Scene {
     const waypoint = this.level.referenceRoute.points[1] ?? midpoint;
     const secondWaypoint = this.level.referenceRoute.points[2] ?? waypoint;
     const secondMidpoint = { x: (waypoint.x + this.level.end.x) / 2, y: (waypoint.y + this.level.end.y) / 2 };
-    const steps: { step: 'straightRoute' | 'waypoints' | 'wind' | 'eca' | 'speed'; point: Vec; action: () => void }[] = [
+    const steps: { step: 'straightRoute' | 'waypoints' | 'speed'; point: Vec; action: () => void; dragIndex?: number }[] = [
       { step: 'straightRoute', point: this.level.start, action: () => { this.state.clickStart(); } },
       { step: 'straightRoute', point: this.level.end, action: () => { this.state.clickEnd(); } },
       { step: 'waypoints', point: midpoint, action: () => { this.state.insertWaypoint(0, midpoint); } },
-      { step: 'waypoints', point: waypoint, action: () => { this.state.moveWaypoint(1, waypoint); } },
+      { step: 'waypoints', point: waypoint, dragIndex: 1, action: () => { this.state.moveWaypoint(1, waypoint); } },
       { step: 'waypoints', point: secondMidpoint, action: () => { this.state.insertWaypoint(1, secondMidpoint); } },
-      { step: 'waypoints', point: secondWaypoint, action: () => { this.state.moveWaypoint(2, secondWaypoint); } },
-      { step: 'wind', point: this.level.windZones[0]?.polygon[0] ?? waypoint, action: () => {} },
-      { step: 'eca', point: this.level.ecas[0]?.[0] ?? waypoint, action: () => {} },
-      { step: 'speed', point: waypoint, action: () => { this.state.cycleLegSpeed(0); } },
+      { step: 'waypoints', point: secondWaypoint, dragIndex: 2, action: () => { this.state.moveWaypoint(2, secondWaypoint); } },
+      { step: 'speed', point: { x: (this.level.start.x + waypoint.x) / 2, y: (this.level.start.y + waypoint.y) / 2 }, action: () => { this.state.cycleLegSpeed(0); } },
     ];
     const play = (index: number): void => {
       if (!active) return;
@@ -190,18 +206,27 @@ export class PlanningScene extends Phaser.Scene {
         finish();
         return;
       }
-      this.tutorialCard?.showStep(step.step, index + 1, steps.length, false);
+      const topics = ['straightRoute', 'waypoints', 'speed'] as const;
+      this.tutorialCard?.showStep(step.step, topics.indexOf(step.step) + 1, topics.length, false);
       this.tutorialCard?.showSkip();
-      motion = this.tweens.add({
-        targets: cursor, x: step.point.x, y: step.point.y, duration: 1100, ease: 'Sine.easeInOut',
-        onComplete: () => {
-          if (!active) return;
-          step.action();
-          motion = this.tweens.add({
-            targets: cursor, alpha: 0.45, duration: 180, yoyo: true, hold: 650,
-            onComplete: () => play(index + 1),
+      const newTopic = index === 0 || steps[index - 1].step !== step.step;
+      this.time.delayedCall(newTopic ? 2400 : 500, () => {
+        if (!active) return;
+        motion = this.tweens.add({
+          targets: cursor, x: step.point.x, y: step.point.y, duration: 1800, ease: 'Sine.easeInOut',
+          onUpdate: () => {
+            if (step.dragIndex !== undefined) this.state.moveWaypoint(step.dragIndex, { x: cursor.x, y: cursor.y });
+          },
+          onComplete: () => {
+            if (!active) return;
+            step.action();
+            motion = this.tweens.add({
+              targets: cursor, scaleX: cursor.scaleX * 0.9, scaleY: cursor.scaleY * 0.9,
+              duration: 250, yoyo: true, hold: 1300,
+              onComplete: () => play(index + 1),
+            });
+          },
           });
-        },
       });
     };
     play(0);
@@ -339,6 +364,8 @@ export class PlanningScene extends Phaser.Scene {
       reason,
       invalidWaypoint,
       totals: this.estimate.totals,
+      routeCount: this.plans.count,
+      selectedRoute: this.plans.selectedIndex,
     });
   }
 
@@ -372,20 +399,25 @@ export class PlanningScene extends Phaser.Scene {
 
   private createTutorialGlove(position: Vec): Phaser.GameObjects.Container {
     const g = this.add.graphics();
+    g.fillStyle(0x0b1e33, 0.25);
+    g.fillEllipse(15, 41, 47, 42);
     g.fillStyle(0xffffff);
-    g.lineStyle(2.5, 0x0b1e33);
-    g.fillRoundedRect(-4, 1, 9, 25, 4);
-    g.strokeRoundedRect(-4, 1, 9, 25, 4);
-    g.fillRoundedRect(2, 15, 23, 18, 8);
-    g.strokeRoundedRect(2, 15, 23, 18, 8);
-    g.fillEllipse(-3, 24, 11, 9);
-    g.strokeEllipse(-3, 24, 11, 9);
-    g.fillStyle(0x3c7bad);
-    g.fillRoundedRect(4, 30, 20, 8, 3);
-    g.strokeRoundedRect(4, 30, 20, 8, 3);
-    g.lineBetween(9, 18, 9, 23);
-    g.lineBetween(15, 18, 15, 23);
-    g.lineBetween(21, 19, 21, 23);
+    g.lineStyle(3, 0x0b1e33);
+    g.fillRoundedRect(0, 22, 32, 30, 12);
+    g.strokeRoundedRect(0, 22, 32, 30, 12);
+    g.fillRoundedRect(-5, 0, 13, 39, 7);
+    g.strokeRoundedRect(-5, 0, 13, 39, 7);
+    g.fillEllipse(-3, 37, 22, 17);
+    g.strokeEllipse(-3, 37, 22, 17);
+    g.fillRoundedRect(7, 23, 11, 18, 6);
+    g.strokeRoundedRect(7, 23, 11, 18, 6);
+    g.fillRoundedRect(17, 26, 10, 16, 5);
+    g.strokeRoundedRect(17, 26, 10, 16, 5);
+    g.fillStyle(0xdce9f2);
+    g.fillRoundedRect(3, 48, 27, 10, 4);
+    g.strokeRoundedRect(3, 48, 27, 10, 4);
+    g.lineBetween(10, 51, 10, 55);
+    g.lineBetween(22, 51, 22, 55);
     return this.add.container(position.x, position.y, [g]).setScale(1 / this.cam.zoom).setDepth(50);
   }
 
@@ -460,10 +492,27 @@ export class PlanningScene extends Phaser.Scene {
       return;
     }
 
+    if (s.stage === 'drawing' && this.nearPort(w, this.level.end)) {
+      s.clickEnd();
+      return;
+    }
+    if (s.stage === 'drawing' && this.nearPort(w, this.level.start)) return;
+
+    const label = s.stage === 'complete' && !this.land.isLand(w) ? this.hitLabel(w) : null;
+    if (label !== null) {
+      s.selectLeg(label);
+      s.cycleLegSpeed(label);
+      return;
+    }
+    const leg = this.hitLeg(w);
+    if (leg !== null && this.allows('insertWaypoint')) {
+      const idx = s.insertWaypoint(leg, w);
+      if (idx !== null) this.drag = { index: idx, moved: false, origin: w, inserted: true, pending: null };
+      return;
+    }
+
     if (s.stage === 'drawing') {
-      if (this.nearPort(w, this.level.end)) s.clickEnd();
-      else if (this.nearPort(w, this.level.start)) return;
-      else if (!this.land.isLand(w)) {
+      if (!this.land.isLand(w)) {
         if (this.allows('addWaypoint') && s.addWaypoint(w)) {
           const arrival = firstArrival(s.route, this.level.end, this.r(HIT_PX.port), false);
           if (arrival !== null) s.finishAtLeg(arrival);
@@ -473,19 +522,6 @@ export class PlanningScene extends Phaser.Scene {
       return;
     }
 
-    // complete
-    const label = this.hitLabel(w);
-    if (label !== null) {
-      s.selectLeg(label);
-      s.cycleLegSpeed(label);
-      return;
-    }
-    const leg = this.hitLeg(w);
-    if (leg !== null && !this.land.isLand(w) && this.allows('insertWaypoint')) {
-      const idx = s.insertWaypoint(leg, w);
-      if (idx !== null) this.drag = { index: idx, moved: false, origin: w, inserted: true, pending: null };
-      return;
-    }
     if (leg !== null) {
       s.selectLeg(leg);
       return;
@@ -526,17 +562,16 @@ export class PlanningScene extends Phaser.Scene {
     this.dirty = true;
     if (drag.pending) this.state.moveWaypoint(drag.index, drag.pending);
     const final = this.state.route.points[drag.index];
-    const onLand = final ? this.land.isLand(final) : false;
     const inDeparture = final ? waypointInsidePort(final, this.level.start, this.r(HIT_PX.port)) : false;
     if (drag.inserted) {
-      if (onLand || inDeparture) this.state.undo();
+      if (inDeparture) this.state.undo();
       else {
         const arrival = firstArrival(this.state.route, this.level.end, this.r(HIT_PX.port), this.state.stage === 'complete');
         if (arrival !== null) this.state.finishAtLeg(arrival);
       }
       return;
     }
-    if (!drag.moved || onLand || inDeparture) {
+    if (!drag.moved || inDeparture) {
       this.state.cancelMove();
       if (!drag.moved && pointer.leftButtonReleased()) {
         this.state.selectLeg(drag.index - 1);

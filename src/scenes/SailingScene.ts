@@ -70,8 +70,8 @@ export class SailingScene extends Phaser.Scene {
       .setScale(1 / cam.zoom)
       .setDepth(30);
 
-    this.hud = createSailingHud(this.level, (on) => {
-      this.speedMul = on ? 2 : 1;
+    this.hud = createSailingHud(this.level, (speed) => {
+      this.speedMul = speed;
     });
     mountForScene(this, this.hud.root);
     this.hud.update({ costK: 0, hours: 0, co2T: 0 });

@@ -10,8 +10,8 @@ export interface SailingHud {
   destroy(): void;
 }
 
-/** Read-only meters while the ship sails, plus a fast-forward toggle. */
-export function createSailingHud(level: LevelDef, onFastForward: (on: boolean) => void): SailingHud {
+/** Read-only meters with normal, fast and extra-fast playback. */
+export function createSailingHud(level: LevelDef, onFastForward: (speed: number) => void): SailingHud {
   const s = t();
   const root = el('aside', 'hud-sidebar');
   const meters = createMetersPanel(level);
@@ -19,14 +19,18 @@ export function createSailingHud(level: LevelDef, onFastForward: (on: boolean) =
   box.append(meters.root);
 
   const actions = el('div', 'hud-actions');
-  const ff = el('button', 'hud-btn hud-btn-secondary', `${s.hud.fastForward} ▶▶`);
+  const speeds = [1, 2, 4] as const;
+  let speedIndex = 0;
+  const ff = el('button', 'hud-btn hud-btn-secondary', `${s.hud.fastForward} 1x`);
   ff.type = 'button';
   ff.setAttribute('aria-pressed', 'false');
   ff.addEventListener('click', () => {
-    const on = ff.getAttribute('aria-pressed') !== 'true';
-    ff.setAttribute('aria-pressed', String(on));
-    ff.classList.toggle('is-on', on);
-    onFastForward(on);
+    speedIndex = (speedIndex + 1) % speeds.length;
+    const speed = speeds[speedIndex];
+    ff.textContent = `${s.hud.fastForward} ${speed}x`;
+    ff.setAttribute('aria-pressed', String(speed !== 1));
+    ff.classList.toggle('is-on', speed !== 1);
+    onFastForward(speed);
   });
   actions.append(ff);
 

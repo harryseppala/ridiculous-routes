@@ -398,27 +398,10 @@ export class PlanningScene extends Phaser.Scene {
   }
 
   private createTutorialGlove(position: Vec): Phaser.GameObjects.Container {
-    const g = this.add.graphics();
-    g.fillStyle(0x0b1e33, 0.25);
-    g.fillEllipse(15, 41, 47, 42);
-    g.fillStyle(0xffffff);
-    g.lineStyle(3, 0x0b1e33);
-    g.fillRoundedRect(0, 22, 32, 30, 12);
-    g.strokeRoundedRect(0, 22, 32, 30, 12);
-    g.fillRoundedRect(-5, 0, 13, 39, 7);
-    g.strokeRoundedRect(-5, 0, 13, 39, 7);
-    g.fillEllipse(-3, 37, 22, 17);
-    g.strokeEllipse(-3, 37, 22, 17);
-    g.fillRoundedRect(7, 23, 11, 18, 6);
-    g.strokeRoundedRect(7, 23, 11, 18, 6);
-    g.fillRoundedRect(17, 26, 10, 16, 5);
-    g.strokeRoundedRect(17, 26, 10, 16, 5);
-    g.fillStyle(0xdce9f2);
-    g.fillRoundedRect(3, 48, 27, 10, 4);
-    g.strokeRoundedRect(3, 48, 27, 10, 4);
-    g.lineBetween(10, 51, 10, 55);
-    g.lineBetween(22, 51, 22, 55);
-    return this.add.container(position.x, position.y, [g]).setScale(1 / this.cam.zoom).setDepth(50);
+    const hand = this.add.image(0, 0, 'tutorial-hand');
+    // The SVG's fingertip is 40% across its top edge, not at its center.
+    hand.setOrigin(0.4, 0).setDisplaySize(60 * 116.04 / 129.89, 60);
+    return this.add.container(position.x, position.y, [hand]).setScale(1 / this.cam.zoom).setDepth(50);
   }
 
   private hitWaypoint(w: Vec): number | null {

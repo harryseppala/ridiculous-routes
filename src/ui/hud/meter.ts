@@ -1,4 +1,4 @@
-import { formatCo2, formatCostOf, formatDuration, formatOf } from '../../i18n/format';
+import { fill, formatCo2, formatCost, formatDuration } from '../../i18n/format';
 import { t } from '../../i18n';
 import type { LevelDef } from '../../game/levels/types';
 import type { VoyageTotals } from '../../game/types';
@@ -6,34 +6,64 @@ import { el } from './hudLayer';
 
 type MeterState = 'ok' | 'warn' | 'over';
 
+interface Marker {
+  at: number;
+  kind: 'limit' | 'target';
+  text: string;
+  hint: string;
+}
+
 interface Meter {
   root: HTMLElement;
   update(value: number, text: string, state: MeterState): void;
 }
 
 const NEAR = 0.9;
+// Below this share of the track the value no longer fits inside the fill.
+const VALUE_INSIDE_FROM = 0.28;
 
-function createMeter(label: string, scaleMax: number, markers: { at: number; kind: 'limit' | 'target' }[]): Meter {
+function createMeter(label: string, scaleMax: number, markers: Marker[]): Meter {
   const root = el('div', 'meter');
-  const head = el('div', 'meter-head');
-  const name = el('span', 'meter-label', label);
-  const value = el('span', 'meter-value');
-  head.append(name, value);
+  const name = el('div', 'meter-label', label);
   const track = el('div', 'meter-track');
-  const fill = el('div', 'meter-fill');
-  track.append(fill);
+  const bar = el('div', 'meter-fill');
+  const value = el('span', 'meter-value');
+  track.append(bar, value);
+
+  const pct = (at: number): number => Math.min(100, (at / scaleMax) * 100);
+  const limit = markers.find((m) => m.kind === 'limit');
+  const target = markers.find((m) => m.kind === 'target');
+  const limitPct = limit ? pct(limit.at) : 100;
+  track.style.setProperty('--limit', `${limitPct}%`);
+  track.style.setProperty('--target', `${target ? pct(target.at) : limitPct}%`);
+
+  const above = el('div', 'meter-flags');
+  const below = el('div', 'meter-flags');
   for (const m of markers) {
     const mark = el('div', `meter-marker meter-marker-${m.kind}`);
-    mark.style.left = `${Math.min(100, (m.at / scaleMax) * 100)}%`;
-    mark.title = m.kind === 'limit' ? t().hud.limit : t().hud.target;
+    mark.style.left = `${pct(m.at)}%`;
     track.append(mark);
+
+    const flag = el('div', `meter-flag meter-flag-${m.kind}`, m.text);
+    flag.style.setProperty('--at', `${pct(m.at)}%`);
+    flag.title = m.hint;
+    (m.kind === 'target' ? above : below).append(flag);
   }
-  root.append(head, track);
+  root.append(name);
+  if (above.childElementCount) root.append(above);
+  root.append(track);
+  if (below.childElementCount) root.append(below);
+
   return {
     root,
     update(v, text, state) {
+      const share = Math.min(1, v / scaleMax);
       value.textContent = text;
-      fill.style.width = `${Math.min(100, (v / scaleMax) * 100)}%`;
+      value.classList.toggle('meter-value-outside', share < VALUE_INSIDE_FROM);
+      value.style.left = `${share * 100}%`;
+      bar.style.width = `${share * 100}%`;
+      track.setAttribute('role', 'img');
+      track.setAttribute('aria-label', `${label}: ${text}`);
       root.dataset.state = state;
     },
   };
@@ -53,29 +83,25 @@ export interface MetersPanel {
 /** Budget / time / emissions meters against the level's limits and targets. */
 export function createMetersPanel(level: LevelDef): MetersPanel {
   const s = t();
+  const m = s.meters;
   const root = el('div', 'meters');
-  const budget = createMeter(s.meters.budget, level.budgetK * 1.15, [
-    { at: level.costTargetK, kind: 'target' },
-    { at: level.budgetK, kind: 'limit' },
+  const budget = createMeter(m.budget, level.budgetK * 1.15, [
+    { at: level.costTargetK, kind: 'target', text: fill(m.starCost, { v: formatCost(level.costTargetK) }), hint: m.starHint2 },
+    { at: level.budgetK, kind: 'limit', text: fill(m.budgetLimit, { v: formatCost(level.budgetK) }), hint: m.limitHint },
   ]);
-  const time = createMeter(s.meters.time, level.deadlineH * 1.15, [{ at: level.deadlineH, kind: 'limit' }]);
-  const co2Max = level.co2TargetT * 1.6;
-  const co2 = createMeter(s.meters.emissions, co2Max, [{ at: level.co2TargetT, kind: 'target' }]);
+  const time = createMeter(m.time, level.deadlineH * 1.15, [
+    { at: level.deadlineH, kind: 'limit', text: fill(m.deadlineLimit, { v: formatDuration(level.deadlineH) }), hint: m.limitHint },
+  ]);
+  const co2 = createMeter(m.emissions, level.co2TargetT * 1.6, [
+    { at: level.co2TargetT, kind: 'target', text: fill(m.starCo2, { v: formatCo2(level.co2TargetT) }), hint: m.starHint3 },
+  ]);
   root.append(budget.root, time.root, co2.root);
 
   return {
     root,
     update(totals) {
-      budget.update(
-        totals.costK,
-        formatCostOf(totals.costK, level.budgetK),
-        stateFor(totals.costK, level.budgetK, level.costTargetK)
-      );
-      time.update(
-        totals.hours,
-        formatOf(formatDuration(totals.hours), formatDuration(level.deadlineH)),
-        stateFor(totals.hours, level.deadlineH)
-      );
+      budget.update(totals.costK, formatCost(totals.costK), stateFor(totals.costK, level.budgetK, level.costTargetK));
+      time.update(totals.hours, formatDuration(totals.hours), stateFor(totals.hours, level.deadlineH));
       co2.update(totals.co2T, formatCo2(totals.co2T), stateFor(totals.co2T, level.co2TargetT));
     },
   };

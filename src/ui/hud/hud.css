@@ -136,36 +136,31 @@
 .meters {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-.meter-head {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 3px;
+  gap: 10px;
 }
 
 .meter-label {
   color: #cfe4f2;
-}
-
-.meter-value {
-  font-weight: bold;
-  font-variant-numeric: tabular-nums;
+  margin-bottom: 2px;
 }
 
 .meter-track {
   position: relative;
-  height: 10px;
-  border-radius: 5px;
-  background: rgb(255 255 255 / 12%);
-  overflow: visible;
+  height: 22px;
+  border-radius: 6px;
+  /* Calm up to the star target, amber beyond it, red past the limit. */
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 12%) 0 var(--target, 100%),
+    rgb(242 169 59 / 22%) var(--target, 100%) var(--limit, 100%),
+    rgb(255 59 59 / 28%) var(--limit, 100%) 100%
+  );
 }
 
 .meter-fill {
   height: 100%;
   width: 0;
-  border-radius: 5px;
+  border-radius: 6px;
   background: #3fb27f;
   transition: width 0.15s ease-out, background-color 0.2s;
 }
@@ -178,16 +173,34 @@
   background: #ff3b3b;
 }
 
-.meter[data-state='over'] .meter-value {
-  color: #ff8a8a;
+.meter-value {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 7px;
+  transform: translateX(-100%);
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: #fff;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 70%);
+  pointer-events: none;
+  transition: left 0.15s ease-out;
+}
+
+.meter-value-outside {
+  transform: none;
 }
 
 .meter-marker {
   position: absolute;
   top: -3px;
-  width: 2px;
-  height: 16px;
-  transform: translateX(-1px);
+  width: 3px;
+  height: 28px;
+  border-radius: 1px;
+  transform: translateX(-1.5px);
 }
 
 .meter-marker-limit {
@@ -195,7 +208,34 @@
 }
 
 .meter-marker-target {
-  background: repeating-linear-gradient(180deg, #ffd27a 0 3px, transparent 3px 5px);
+  background: #ffd27a;
+}
+
+.meter-flags {
+  position: relative;
+  height: 20px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.meter-flag {
+  position: absolute;
+  /* Keep the label inside the panel while it stays centred on its marker. */
+  left: clamp(40px, var(--at, 0%), calc(100% - 40px));
+  transform: translateX(-50%);
+  white-space: nowrap;
+  cursor: help;
+}
+
+
+.meter-flag-target {
+  bottom: 4px;
+  color: #ffd27a;
+}
+
+.meter-flag-limit {
+  top: 4px;
+  color: #ff8a8a;
 }
 
 /* ---------- Speed ---------- */

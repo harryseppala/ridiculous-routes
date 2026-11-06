@@ -221,20 +221,18 @@
 .meter-flag {
   position: absolute;
   /* Keep the label inside the panel while it stays centred on its marker. */
-  left: clamp(40px, var(--at, 0%), calc(100% - 40px));
+  bottom: 4px;
+  left: clamp(30px, var(--at, 0%), calc(100% - 30px));
   transform: translateX(-50%);
   white-space: nowrap;
   cursor: help;
 }
 
-
 .meter-flag-target {
-  bottom: 4px;
   color: #ffd27a;
 }
 
 .meter-flag-limit {
-  top: 4px;
   color: #ff8a8a;
 }
 

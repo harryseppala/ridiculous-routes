@@ -1,4 +1,4 @@
-import { fill, formatCo2, formatCost, formatDuration } from '../../i18n/format';
+import { formatCo2, formatCost, formatDuration } from '../../i18n/format';
 import { t } from '../../i18n';
 import type { LevelDef } from '../../game/levels/types';
 import type { VoyageTotals } from '../../game/types';
@@ -37,8 +37,7 @@ function createMeter(label: string, scaleMax: number, markers: Marker[]): Meter 
   track.style.setProperty('--limit', `${limitPct}%`);
   track.style.setProperty('--target', `${target ? pct(target.at) : limitPct}%`);
 
-  const above = el('div', 'meter-flags');
-  const below = el('div', 'meter-flags');
+  const flags = el('div', 'meter-flags');
   for (const m of markers) {
     const mark = el('div', `meter-marker meter-marker-${m.kind}`);
     mark.style.left = `${pct(m.at)}%`;
@@ -47,12 +46,9 @@ function createMeter(label: string, scaleMax: number, markers: Marker[]): Meter 
     const flag = el('div', `meter-flag meter-flag-${m.kind}`, m.text);
     flag.style.setProperty('--at', `${pct(m.at)}%`);
     flag.title = m.hint;
-    (m.kind === 'target' ? above : below).append(flag);
+    flags.append(flag);
   }
-  root.append(name);
-  if (above.childElementCount) root.append(above);
-  root.append(track);
-  if (below.childElementCount) root.append(below);
+  root.append(name, flags, track);
 
   return {
     root,
@@ -86,14 +82,14 @@ export function createMetersPanel(level: LevelDef): MetersPanel {
   const m = s.meters;
   const root = el('div', 'meters');
   const budget = createMeter(m.budget, level.budgetK * 1.15, [
-    { at: level.costTargetK, kind: 'target', text: fill(m.starCost, { v: formatCost(level.costTargetK) }), hint: m.starHint2 },
-    { at: level.budgetK, kind: 'limit', text: fill(m.budgetLimit, { v: formatCost(level.budgetK) }), hint: m.limitHint },
+    { at: level.costTargetK, kind: 'target', text: formatCost(level.costTargetK), hint: m.starHint2 },
+    { at: level.budgetK, kind: 'limit', text: formatCost(level.budgetK), hint: m.limitHint },
   ]);
   const time = createMeter(m.time, level.deadlineH * 1.15, [
-    { at: level.deadlineH, kind: 'limit', text: fill(m.deadlineLimit, { v: formatDuration(level.deadlineH) }), hint: m.limitHint },
+    { at: level.deadlineH, kind: 'limit', text: formatDuration(level.deadlineH), hint: m.limitHint },
   ]);
   const co2 = createMeter(m.emissions, level.co2TargetT * 1.6, [
-    { at: level.co2TargetT, kind: 'target', text: fill(m.starCo2, { v: formatCo2(level.co2TargetT) }), hint: m.starHint3 },
+    { at: level.co2TargetT, kind: 'target', text: formatCo2(level.co2TargetT), hint: m.starHint3 },
   ]);
   root.append(budget.root, time.root, co2.root);
 

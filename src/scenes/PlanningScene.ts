@@ -186,10 +186,10 @@ export class PlanningScene extends Phaser.Scene {
     };
     this.tutorialCard = createTutorialCard(finish);
     mountForScene(this, this.tutorialCard.root);
-    const midpoint = { x: (this.level.start.x + this.level.end.x) / 2, y: (this.level.start.y + this.level.end.y) / 2 };
+    const midpoint = this.besideSpeedBadge(this.level.start, this.level.end);
     const waypoint = this.level.referenceRoute.points[1] ?? midpoint;
     const secondWaypoint = this.level.referenceRoute.points[2] ?? waypoint;
-    const secondMidpoint = { x: (waypoint.x + this.level.end.x) / 2, y: (waypoint.y + this.level.end.y) / 2 };
+    const secondMidpoint = this.besideSpeedBadge(waypoint, this.level.end);
     const steps: { step: 'straightRoute' | 'waypoints' | 'speed'; point: Vec; action: () => void; dragIndex?: number }[] = [
       { step: 'straightRoute', point: this.level.start, action: () => { this.state.clickStart(); } },
       { step: 'straightRoute', point: this.level.end, action: () => { this.state.clickEnd(); } },
@@ -230,6 +230,14 @@ export class PlanningScene extends Phaser.Scene {
       });
     };
     play(0);
+  }
+
+  /** A point on the leg a→b just past its speed badge, so clicking it adds a waypoint instead of changing speed. */
+  private besideSpeedBadge(a: Vec, b: Vec): Vec {
+    const length = dist(a, b);
+    if (length === 0) return a;
+    const t = Math.min(0.9, 0.5 + this.r(HIT_PX.label + 22) / length);
+    return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
   }
 
   private tutorialContext(): TutorialContext {

@@ -84,6 +84,8 @@ export function setupMapCamera(scene: Phaser.Scene, rect: Rect): Phaser.Cameras.
   cam.setViewport(0, 0, LAYOUT.mapWidth, LAYOUT.gameHeight);
   cam.setBackgroundColor(PALETTE.ocean);
   fitCameraToRect(cam, rect);
+  // Centre the level in the space left of the HUD sidebar so ports never sit underneath it.
+  cam.scrollX += (LAYOUT.sidebarWidth / 2) / cam.zoom;
   return cam;
 }
 

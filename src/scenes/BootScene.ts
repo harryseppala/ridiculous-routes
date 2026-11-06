@@ -18,7 +18,11 @@ export class BootScene extends Phaser.Scene {
 
   preload(): void {
     this.load.image('start-bg', `${import.meta.env.BASE_URL}assets/images/start-bg.png`);
-    this.load.svg('tutorial-hand', `${import.meta.env.BASE_URL}assets/images/tutorial-hand.svg`);
+    // The SVG has only a viewBox, so rasterize it at an explicit size (2x its viewBox).
+    this.load.svg('tutorial-hand', `${import.meta.env.BASE_URL}assets/images/tutorial-hand.svg`, {
+      width: 236,
+      height: 264,
+    });
     this.load.svg(MAP_TEXTURE_KEY, `${import.meta.env.BASE_URL}assets/images/map3.svg`, {
       width: MAP_TEXTURE_SIZE.width,
       height: MAP_TEXTURE_SIZE.height,
